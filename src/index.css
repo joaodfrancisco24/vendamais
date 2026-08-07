@@ -78,6 +78,11 @@
 /* Compact scale adjustment */
 html, body {
   font-size: 14px;
+  background-color: #ecf1f7;
+}
+
+#venda-mais-main-shell, #venda-mais-viewport {
+  background-color: #ecf1f7 !important;
 }
 
 /* Global 5px border-radius limitation on all divs and tailwind rounded utilities (excluding rounded-full) */

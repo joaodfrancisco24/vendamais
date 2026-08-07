@@ -931,7 +931,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex" id="venda-mais-main-shell">
+    <div className="min-h-screen bg-[#ecf1f7] flex" id="venda-mais-main-shell">
       
       {/* MOBILE HEADER BUTTON */}
       <div className="fixed top-4 left-4 z-40 lg:hidden">
@@ -949,18 +949,18 @@ export default function App() {
         id="venda-mais-navigation"
         className={`fixed inset-y-0 left-0 z-30 ${
           isCollapsed ? 'lg:w-16' : 'lg:w-60'
-        } w-60 bg-white border-r border-slate-200/90 flex flex-col justify-between transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:static ${
+        } w-60 bg-[#191f29] border-r border-slate-800/80 flex flex-col justify-between transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:static ${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className="flex-1 flex flex-col min-h-0">
           
           {/* Brand Header Block */}
-          <div className="bg-brand text-white px-3 py-2.5 h-13 flex items-center justify-between shadow-xs relative overflow-hidden shrink-0">
+          <div className="bg-[#10141d] text-white px-3 py-2.5 h-13 flex items-center justify-between border-b border-slate-800/80 relative overflow-hidden shrink-0">
             <div className="flex items-center gap-2.5">
               {/* White Rounded Square Badge */}
-              <div className="w-8 h-8 bg-white rounded-xl flex items-center justify-center p-0.5 flex-shrink-0 shadow-2xs">
-                <span className="text-[8px] font-black text-brand tracking-tight text-center leading-none">
+              <div className="w-8 h-8 bg-brand rounded-xl flex items-center justify-center p-0.5 flex-shrink-0 shadow-2xs">
+                <span className="text-[8px] font-black text-white tracking-tight text-center leading-none">
                   VENDA<br/>MAIS
                 </span>
               </div>
@@ -969,7 +969,7 @@ export default function App() {
               {!isCollapsed && (
                 <div className="animate-fadeIn">
                   <h1 className="font-black text-white tracking-wider text-xs uppercase">VENDA MAIS</h1>
-                  <p className="text-[7.5px] text-white/80 font-extrabold uppercase tracking-widest mt-0.5">ECOSSISTEMA WEB</p>
+                  <p className="text-[7.5px] text-brand font-extrabold uppercase tracking-widest mt-0.5">ECOSSISTEMA WEB</p>
                 </div>
               )}
             </div>
@@ -997,7 +997,7 @@ export default function App() {
                     PRINCIPAL
                   </span>
                 ) : (
-                  <div className="border-t border-slate-100 my-1.5" />
+                  <div className="border-t border-slate-800 my-1.5" />
                 )}
                 
                 <button
@@ -1005,8 +1005,8 @@ export default function App() {
                   onClick={() => handleNavigateWithPermission('dashboard')}
                   className={`w-full py-2 px-3 rounded-lg text-xs transition flex items-center justify-between ${
                     activeTab === 'dashboard'
-                      ? 'bg-brand-light border-r-4 border-brand text-brand font-black shadow-2xs'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-bold'
+                      ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
+                      : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
                   }`}
                   title="Painel Geral"
                 >
@@ -1025,7 +1025,7 @@ export default function App() {
                   OPERACIONAL
                 </span>
               ) : (
-                <div className="border-t border-slate-100 my-1.5" />
+                <div className="border-t border-slate-800 my-1.5" />
               )}
 
               {/* Fatura Recibo */}
@@ -1034,8 +1034,8 @@ export default function App() {
                 onClick={() => handleNavigateWithPermission('pos')}
                 className={`w-full py-2 px-3 rounded-lg text-xs transition flex items-center justify-between ${
                   activeTab === 'pos'
-                    ? 'bg-brand-light border-r-4 border-brand text-brand font-black shadow-2xs'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-bold'
+                    ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
+                    : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
                 }`}
                 title="FATURA RECIBO"
               >
@@ -1051,8 +1051,8 @@ export default function App() {
                 onClick={() => handleNavigateWithPermission('recibo')}
                 className={`w-full py-2 px-3 rounded-lg text-xs transition flex items-center justify-between ${
                   activeTab === 'recibo'
-                    ? 'bg-brand-light border-r-4 border-brand text-brand font-black shadow-2xs'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-bold'
+                    ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
+                    : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
                 }`}
                 title="Recibos (RC)"
               >
@@ -1068,8 +1068,8 @@ export default function App() {
                 onClick={() => handleNavigateWithPermission('operacoes')}
                 className={`w-full py-2 px-3 rounded-lg text-xs transition flex items-center justify-between ${
                   activeTab === 'operacoes'
-                    ? 'bg-brand-light border-r-4 border-brand text-brand font-black shadow-2xs'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-bold'
+                    ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
+                    : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
                 }`}
                 title="Operações Gerais"
               >
@@ -1085,8 +1085,8 @@ export default function App() {
                 onClick={() => handleNavigateWithPermission('guia')}
                 className={`w-full py-2 px-3 rounded-lg text-xs transition flex items-center justify-between ${
                   activeTab === 'guia'
-                    ? 'bg-brand-light border-r-4 border-brand text-brand font-black shadow-2xs'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-bold'
+                    ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
+                    : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
                 }`}
                 title="Guia de Remessa"
               >
@@ -1102,8 +1102,8 @@ export default function App() {
                 onClick={() => handleNavigateWithPermission('invoices')}
                 className={`w-full py-2 px-3 rounded-lg text-xs transition flex items-center justify-between ${
                   activeTab === 'invoices'
-                    ? 'bg-brand-light border-r-4 border-brand text-brand font-black shadow-2xs'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-bold'
+                    ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
+                    : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
                 }`}
                 title="Documentos"
               >
@@ -1122,7 +1122,7 @@ export default function App() {
                     GESTÃO DE STOCK
                   </span>
                 ) : (
-                  <div className="border-t border-slate-100 my-1.5" />
+                  <div className="border-t border-slate-800 my-1.5" />
                 )}
 
                 {/* Armazéns */}
@@ -1131,8 +1131,8 @@ export default function App() {
                   onClick={() => handleNavigateWithPermission('armazens')}
                   className={`w-full py-2 px-3 rounded-lg text-xs transition flex items-center justify-between ${
                     activeTab === 'armazens'
-                      ? 'bg-brand-light border-r-4 border-brand text-brand font-black shadow-2xs'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-bold'
+                      ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
+                      : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
                   }`}
                   title="Armazéns"
                 >
@@ -1148,8 +1148,8 @@ export default function App() {
                   onClick={() => handleNavigateWithPermission('products')}
                   className={`w-full py-2 px-3 rounded-lg text-xs transition flex items-center justify-between ${
                     activeTab === 'products'
-                      ? 'bg-brand-light border-r-4 border-brand text-brand font-black shadow-2xs'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-bold'
+                      ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
+                      : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
                   }`}
                   title="Meus Produtos"
                 >
@@ -1168,7 +1168,7 @@ export default function App() {
                   TESOURARIA
                 </span>
               ) : (
-                <div className="border-t border-slate-100 my-1.5" />
+                <div className="border-t border-slate-800 my-1.5" />
               )}
 
               {/* Módulo SAF-T (AO) (Admin only) */}
@@ -1178,8 +1178,8 @@ export default function App() {
                   onClick={() => handleNavigateWithPermission('saft')}
                   className={`w-full py-2 px-3 rounded-lg text-xs transition flex items-center justify-between ${
                     activeTab === 'saft'
-                      ? 'bg-brand-light border-r-4 border-brand text-brand font-black shadow-2xs'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-bold'
+                      ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
+                      : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
                   }`}
                   title="Módulo SAF-T (AO)"
                 >
@@ -1197,8 +1197,8 @@ export default function App() {
                   onClick={() => handleNavigateWithPermission('agt')}
                   className={`w-full py-2 px-3 rounded-lg text-xs transition flex items-center justify-between ${
                     activeTab === 'agt'
-                      ? 'bg-brand-light border-r-4 border-brand text-brand font-black shadow-2xs'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-bold'
+                      ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
+                      : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
                   }`}
                   title="Integração AGT"
                 >
@@ -1216,8 +1216,8 @@ export default function App() {
                   onClick={() => handleNavigateWithPermission('relatorios')}
                   className={`w-full py-2 px-3 rounded-lg text-xs transition flex items-center justify-between ${
                     activeTab === 'relatorios'
-                      ? 'bg-brand-light border-r-4 border-brand text-brand font-black shadow-2xs'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-bold'
+                      ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
+                      : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
                   }`}
                   title="Relatórios Financeiros"
                 >
@@ -1235,8 +1235,8 @@ export default function App() {
                   onClick={() => handleNavigateWithPermission('pagamentos')}
                   className={`w-full py-2 px-3 rounded-lg text-xs transition flex items-center justify-between ${
                     activeTab === 'pagamentos'
-                      ? 'bg-brand-light border-r-4 border-brand text-brand font-black shadow-2xs'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-bold'
+                      ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
+                      : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
                   }`}
                   title="Saídas / Pagamentos"
                 >
@@ -1253,8 +1253,8 @@ export default function App() {
                 onClick={() => handleNavigateWithPermission('turnos')}
                 className={`w-full py-2 px-3 rounded-lg text-xs transition flex items-center justify-between ${
                   activeTab === 'turnos'
-                    ? 'bg-brand-light border-r-4 border-brand text-brand font-black shadow-2xs'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-bold'
+                    ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
+                    : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
                 }`}
                 title="Gestão de Turnos"
               >
@@ -1272,8 +1272,8 @@ export default function App() {
                 onClick={() => handleNavigateWithPermission('customers')}
                 className={`w-full py-2 px-3 rounded-lg text-xs transition flex items-center justify-between ${
                   activeTab === 'customers'
-                    ? 'bg-brand-light border-r-4 border-brand text-brand font-black shadow-2xs'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-bold'
+                    ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
+                    : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
                 }`}
                 title="Clientes"
               >
@@ -1292,7 +1292,7 @@ export default function App() {
                     CONFIGURAÇÕES & ACESSOS
                   </span>
                 ) : (
-                  <div className="border-t border-slate-100 my-1.5" />
+                  <div className="border-t border-slate-800 my-1.5" />
                 )}
 
                 <button
@@ -1300,8 +1300,8 @@ export default function App() {
                   onClick={() => handleNavigateWithPermission('users')}
                   className={`w-full py-2 px-3 rounded-lg text-xs transition flex items-center justify-between ${
                     activeTab === 'users'
-                      ? 'bg-brand-light border-r-4 border-brand text-brand font-black shadow-2xs'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-bold'
+                      ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
+                      : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
                   }`}
                   title="Utilizadores & Acessos"
                 >
@@ -1316,8 +1316,8 @@ export default function App() {
                   onClick={() => handleNavigateWithPermission('config')}
                   className={`w-full py-2 px-3 rounded-lg text-xs transition flex items-center justify-between ${
                     activeTab === 'config'
-                      ? 'bg-brand-light border-r-4 border-brand text-brand font-black shadow-2xs'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-bold'
+                      ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
+                      : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
                   }`}
                   title="Configurações"
                 >
@@ -1333,7 +1333,7 @@ export default function App() {
         </div>
 
         {/* Footer with clock & Collapse Button */}
-        <div className="p-4 border-t border-slate-100 bg-slate-50 flex flex-col gap-1.5">
+        <div className="p-4 border-t border-slate-800/80 bg-[#12171f] flex flex-col gap-1.5">
           <div className="flex items-center justify-between gap-2">
             {!isCollapsed ? (
               <div className="flex items-center gap-2 text-xxs text-slate-400 font-bold">
@@ -1346,7 +1346,7 @@ export default function App() {
             
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-200 rounded-lg transition lg:block hidden"
+              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition lg:block hidden"
               title={isCollapsed ? "Expandir Menu" : "Colapsar Menu"}
             >
               <ChevronLeft className={`w-4 h-4 transform transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`} />

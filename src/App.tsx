@@ -1443,6 +1443,8 @@ export default function App() {
             onNavigate={(tab) => handleNavigateWithPermission(tab)}
             lastInvoiceHash={lastInvoiceHash}
             onAddCustomer={addCustomer}
+            onAddProduct={addProduct}
+            onUpdateCompany={saveCompany}
           />
         )}
 
@@ -1539,6 +1541,7 @@ export default function App() {
               }
               setActiveTab('recibo');
             }}
+            onUpdateCompany={saveCompany}
           />
         )}
 

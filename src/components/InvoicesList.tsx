@@ -38,6 +38,7 @@ interface InvoicesListProps {
   selectedInvoiceNoToView?: string | null;
   onClearSelectedInvoiceNoToView?: () => void;
   onNavigateToReceipt?: (invoice: Invoice, createNew?: boolean) => void;
+  onUpdateCompany?: (company: CompanyConfig) => void;
 }
 
 export default function InvoicesList({
@@ -49,12 +50,53 @@ export default function InvoicesList({
   onEmitCreditNote,
   selectedInvoiceNoToView,
   onClearSelectedInvoiceNoToView,
-  onNavigateToReceipt
+  onNavigateToReceipt,
+  onUpdateCompany
 }: InvoicesListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'ALL' | 'FR' | 'FT' | 'FP' | 'NC'>('ALL');
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [printFormat, setPrintFormat] = useState<'ticket' | 'a4'>('ticket');
+
+  // Quick Bank Details Form state
+  const [isQuickBankOpen, setIsQuickBankOpen] = useState(false);
+  const [quickBankName, setQuickBankName] = useState('');
+  const [quickBankIban, setQuickBankIban] = useState('AO06');
+  const [quickBankAccount, setQuickBankAccount] = useState('');
+  const [quickBankHolder, setQuickBankHolder] = useState(company.name || '');
+
+  const handleSaveQuickBank = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickBankName.trim() || !quickBankIban.trim()) return;
+
+    const newAcc = {
+      id: Math.random().toString(36).substr(2, 9),
+      bankName: quickBankName.trim().toUpperCase(),
+      iban: quickBankIban.trim().toUpperCase(),
+      accountNumber: quickBankAccount.trim(),
+      holderName: quickBankHolder.trim() || company.name,
+      isDefault: true
+    };
+
+    const currentAccounts = company.bankAccounts || [];
+    const updatedAccounts = [
+      ...currentAccounts.map(acc => ({ ...acc, isDefault: false })),
+      newAcc
+    ];
+
+    if (onUpdateCompany) {
+      onUpdateCompany({
+        ...company,
+        bankAccounts: updatedAccounts
+      });
+    }
+
+    setQuickBankName('');
+    setQuickBankIban('AO06');
+    setQuickBankAccount('');
+    setQuickBankHolder(company.name || '');
+    setIsQuickBankOpen(false);
+  };
 
   useEffect(() => {
     if (selectedInvoice) {
@@ -592,6 +634,38 @@ export default function InvoicesList({
                     </p>
                   </div>
 
+                  {/* Bank Details on Ticket */}
+                  <div className="space-y-1 text-[9px] leading-tight text-gray-600 my-2 pt-2 border-t border-dashed border-gray-200 text-left">
+                    {company.bankAccounts && company.bankAccounts.length > 0 ? (
+                      <div>
+                        <p className="font-bold text-gray-700 uppercase tracking-wider text-[8px] mb-1">DADOS BANCÁRIOS:</p>
+                        {company.bankAccounts.filter(acc => acc.isDefault || company.bankAccounts!.length === 1).map((acc) => (
+                          <div key={acc.id} className="font-mono bg-gray-50 p-1 rounded border border-gray-100 my-1">
+                            <p className="font-bold text-gray-800">{acc.bankName}</p>
+                            <p>IBAN: {acc.iban}</p>
+                            {acc.accountNumber && <p>CONTA: {acc.accountNumber}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="bg-amber-50 p-1.5 rounded border border-amber-200 text-center space-y-1">
+                        <p className="font-bold text-amber-800 text-[8px] uppercase">Sem Dados Bancários!</p>
+                        {onUpdateCompany && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setQuickBankHolder(company.name || '');
+                              setIsQuickBankOpen(true);
+                            }}
+                            className="w-full py-1 bg-amber-600 text-white text-[8px] font-bold rounded cursor-pointer"
+                          >
+                            + Cadastrar Coordenadas
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
                   <div className="border-t border-dashed border-gray-300 my-2"></div>
 
                   {/* Encryption Audit and Signatures */}
@@ -728,9 +802,47 @@ export default function InvoicesList({
 
                   {/* Totals & Summary */}
                   <div className="flex flex-col sm:flex-row justify-between items-start gap-6 pt-4 border-t border-slate-200">
-                    <div className="space-y-2 text-xxs text-slate-500 max-w-sm">
+                    <div className="space-y-2 text-xxs text-slate-500 max-w-sm text-left">
                       <p><strong>Operador:</strong> {selectedInvoice.operator || currentUser?.name || currentUser?.username || 'Operador'}</p>
                       {selectedInvoice.notes && <p><strong>Observações:</strong> {selectedInvoice.notes}</p>}
+
+                      {/* Bank details or Prompt to register */}
+                      <div className="mt-4 border-t border-slate-150 pt-3">
+                        {company.bankAccounts && company.bankAccounts.length > 0 ? (
+                          <div className="space-y-1.5">
+                            <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 block">Coordenadas Bancárias para Pagamento</span>
+                            {company.bankAccounts.filter(acc => acc.isDefault || company.bankAccounts!.length === 1).map((acc) => (
+                              <div key={acc.id} className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 space-y-0.5">
+                                <p className="font-bold text-slate-700">{acc.bankName} {acc.holderName ? `· ${acc.holderName}` : ''}</p>
+                                <p className="font-mono text-[10px] text-slate-900">IBAN: <strong>{acc.iban}</strong></p>
+                                {acc.accountNumber && <p className="text-slate-500">Nº Conta: {acc.accountNumber}</p>}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="bg-amber-50/50 border border-amber-200/55 p-3 rounded-xl space-y-1.5 flex flex-col items-start">
+                            <p className="text-[10px] font-bold text-amber-800 flex items-center gap-1">
+                              <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+                              Sem Coordenadas Bancárias
+                            </p>
+                            <p className="text-[9px] text-amber-700 leading-normal">
+                              Seus dados bancários não estão configurados. Cadastre-os agora para aparecerem na fatura.
+                            </p>
+                            {onUpdateCompany && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setQuickBankHolder(company.name || '');
+                                  setIsQuickBankOpen(true);
+                                }}
+                                className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white text-[9px] font-black uppercase tracking-wider rounded-lg transition active:scale-95 cursor-pointer"
+                              >
+                                + CADASTRAR AGORA
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     <div className="w-full sm:w-64 space-y-1.5 text-right bg-slate-50 p-4 rounded-2xl border border-slate-200">
@@ -809,6 +921,96 @@ export default function InvoicesList({
               </div>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* QUICK ADD BANK ACCOUNT MODAL */}
+      {isQuickBankOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 transition-opacity duration-250 animate-fade-in">
+          <div className="bg-white rounded-3xl border border-slate-200/80 p-6 w-full max-w-md shadow-2xl relative space-y-4 text-left">
+            <button
+              onClick={() => setIsQuickBankOpen(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-slate-100 transition text-slate-400 hover:text-slate-700 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+              <div className="w-9 h-9 rounded-xl bg-brand-light text-brand flex items-center justify-center font-sans">
+                <CreditCard className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-sm text-slate-900 font-sans">Cadastrar Dados Bancários</h3>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">Adicionar conta para a fatura</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveQuickBank} className="space-y-4">
+              <div>
+                <label className="text-[10px] font-black text-slate-500 uppercase block mb-1 font-sans">Nome do Banco *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ex: BANCO BAI, BFA, BIC"
+                  value={quickBankName}
+                  onChange={(e) => setQuickBankName(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-brand focus:border-brand transition font-semibold"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-slate-500 uppercase block mb-1 font-sans">IBAN *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ex: AO06..."
+                  value={quickBankIban}
+                  onChange={(e) => setQuickBankIban(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:outline-none focus:bg-white focus:ring-2 focus:ring-brand focus:border-brand transition"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 font-sans">
+                <div>
+                  <label className="text-[10px] font-black text-slate-500 uppercase block mb-1">Nº da Conta</label>
+                  <input
+                    type="text"
+                    placeholder="Opcional"
+                    value={quickBankAccount}
+                    onChange={(e) => setQuickBankAccount(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-brand focus:border-brand transition font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-500 uppercase block mb-1">Titular da Conta</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: Nome da Empresa"
+                    value={quickBankHolder}
+                    onChange={(e) => setQuickBankHolder(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-brand focus:border-brand transition font-semibold"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-3 font-sans">
+                <button
+                  type="button"
+                  onClick={() => setIsQuickBankOpen(false)}
+                  className="px-4 py-2 border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs rounded-xl transition cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-brand hover:bg-brand-dark text-white font-bold text-xs rounded-xl transition flex items-center gap-2 shadow-xs cursor-pointer"
+                >
+                  <Check className="w-4 h-4" />
+                  GRAVAR CONTA
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

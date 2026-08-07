@@ -18,6 +18,41 @@ export default function FinancialReports({ invoices, products }: FinancialReport
   const estimatedCost = totalSales * 0.6;
   const estimatedProfit = totalSales - estimatedCost - totalTax;
   const profitMargin = totalSales > 0 ? (estimatedProfit / totalSales) * 100 : 0;
+
+  // Real Monthly Revenue Trend data aggregation
+  const yearsInInvoices = invoices.map(inv => inv.date.slice(0, 4)).filter(Boolean);
+  const latestYear = yearsInInvoices.length > 0 
+    ? Math.max(...yearsInInvoices.map(Number)).toString() 
+    : new Date().getFullYear().toString();
+
+  const monthlyTrendData = [
+    { key: '01', name: 'Jan', value: 0 },
+    { key: '02', name: 'Fev', value: 0 },
+    { key: '03', name: 'Mar', value: 0 },
+    { key: '04', name: 'Abr', value: 0 },
+    { key: '05', name: 'Mai', value: 0 },
+    { key: '06', name: 'Jun', value: 0 },
+    { key: '07', name: 'Jul', value: 0 },
+    { key: '08', name: 'Ago', value: 0 },
+    { key: '09', name: 'Set', value: 0 },
+    { key: '10', name: 'Out', value: 0 },
+    { key: '11', name: 'Nov', value: 0 },
+    { key: '12', name: 'Dez', value: 0 },
+  ];
+
+  invoices.forEach((inv) => {
+    const invYear = inv.date.slice(0, 4);
+    const invMonth = inv.date.slice(5, 7);
+    if (invYear === latestYear) {
+      const found = monthlyTrendData.find(m => m.key === invMonth);
+      if (found) {
+        found.value += inv.total;
+      }
+    }
+  });
+
+  const maxMonthValue = Math.max(...monthlyTrendData.map(m => m.value), 0);
+  const maxValForScale = maxMonthValue > 0 ? maxMonthValue : 1;
   
   // Payment methods breakdown
   let cashSales = 0;
@@ -134,27 +169,25 @@ export default function FinancialReports({ invoices, products }: FinancialReport
         <div className="lg:col-span-8 bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-6">
           <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2 border-b border-slate-50 pb-3">
             <BarChart2 className="w-4 h-4 text-brand" />
-            Tendência de Receita Mensal (Mock)
+            Tendência de Receita Mensal ({latestYear})
           </h3>
           
-          <div className="h-[220px] flex items-end justify-between gap-2 pt-4">
-            {['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul'].map((month, idx) => {
-              // Custom scale heights based on index
-              const heights = [30, 45, 60, 50, 75, 90, 80];
-              const height = heights[idx];
+          <div className="h-[170px] flex items-end justify-between gap-1 pt-4">
+            {monthlyTrendData.map((month) => {
+              const percentHeight = maxMonthValue > 0 ? (month.value / maxValForScale) * 100 : 0;
               return (
-                <div key={month} className="flex-1 flex flex-col items-center gap-2 group">
-                  <div className="w-full bg-slate-50 hover:bg-slate-100 rounded-xl h-[180px] flex items-end overflow-hidden transition relative">
+                <div key={month.key} className="flex-1 flex flex-col items-center gap-2 group">
+                  <div className="w-3 sm:w-4.5 bg-slate-50 hover:bg-slate-100 rounded-lg h-[120px] flex items-end overflow-hidden transition relative">
                     <div 
-                      style={{ height: `${height}%` }}
-                      className="w-full bg-brand group-hover:bg-brand-dark transition-all rounded-t-lg flex items-center justify-center relative shadow-sm"
+                      style={{ height: `${percentHeight}%` }}
+                      className="w-full bg-brand group-hover:bg-brand-dark transition-all rounded-t flex items-center justify-center relative shadow-xs"
                     >
-                      <span className="opacity-0 group-hover:opacity-100 absolute -top-8 bg-slate-950 text-white font-mono text-[9px] px-2 py-0.5 rounded-lg transition font-bold shadow-md z-10">
-                        {formatKz((totalSales || 1000000) * (height / 80))}
+                      <span className="opacity-0 group-hover:opacity-100 absolute -top-9 bg-slate-950 text-white font-mono text-[9px] px-2 py-0.5 rounded-lg transition font-bold shadow-md z-10 whitespace-nowrap">
+                        {formatKz(month.value)}
                       </span>
                     </div>
                   </div>
-                  <span className="text-xxs font-bold text-slate-400 uppercase">{month}</span>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">{month.name}</span>
                 </div>
               );
             })}

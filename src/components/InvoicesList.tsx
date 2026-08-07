@@ -216,32 +216,81 @@ export default function InvoicesList({
                   <tr key={inv.id} className="hover:bg-gray-50/50 transition">
                     <td className="p-4">
                       <p className="font-mono font-bold text-gray-900">{inv.invoiceNo}</p>
-                      {inv.rectifiedInvoiceNo && (
-                        <p className="text-[10px] text-amber-700 font-medium flex items-center gap-1 mt-0.5">
-                          <RotateCcw className="w-3 h-3 shrink-0" />
-                          <span>Rectifica: {inv.rectifiedInvoiceNo}</span>
-                        </p>
-                      )}
+                      {inv.rectifiedInvoiceNo && (() => {
+                        const originalInvoice = invoices.find(i => i.invoiceNo === inv.rectifiedInvoiceNo);
+                        if (originalInvoice) {
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedInvoice(originalInvoice);
+                                const docConf = getDocumentPrintFormat(originalInvoice.type);
+                                setPrintFormat(docConf.format === 'A4' ? 'a4' : 'ticket');
+                              }}
+                              className="text-[10px] text-amber-700 hover:text-amber-900 font-bold flex items-center gap-1 mt-1 bg-amber-50 hover:bg-amber-100 px-1.5 py-0.5 rounded transition cursor-pointer border border-amber-200/60 w-fit"
+                              title="Clique para visualizar a Fatura original"
+                            >
+                              <FileText className="w-3 h-3 shrink-0 text-amber-600" />
+                              <span>Fatura: {inv.rectifiedInvoiceNo}</span>
+                            </button>
+                          );
+                        } else {
+                          return (
+                            <p className="text-[10px] text-amber-700 font-medium flex items-center gap-1 mt-0.5">
+                              <RotateCcw className="w-3 h-3 shrink-0" />
+                              <span>Rectifica: {inv.rectifiedInvoiceNo}</span>
+                            </p>
+                          );
+                        }
+                      })()}
+                      {(() => {
+                        const creditNote = invoices.find(i => i.type === 'NC' && i.rectifiedInvoiceNo === inv.invoiceNo);
+                        if (creditNote) {
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedInvoice(creditNote);
+                                const docConf = getDocumentPrintFormat(creditNote.type);
+                                setPrintFormat(docConf.format === 'A4' ? 'a4' : 'ticket');
+                              }}
+                              className="text-[10px] text-amber-800 hover:text-amber-950 font-bold flex items-center gap-1 mt-1 bg-amber-50 hover:bg-amber-100 px-1.5 py-0.5 rounded transition cursor-pointer border border-amber-300/60 w-fit"
+                              title="Clique para visualizar a Nota de Crédito emitida"
+                            >
+                              <RotateCcw className="w-3 h-3 shrink-0 text-amber-700" />
+                              <span>Nota Crédito: {creditNote.invoiceNo}</span>
+                            </button>
+                          );
+                        }
+                        return null;
+                      })()}
                       {inv.linkedReceiptNo && (
                         <button
                           type="button"
                           onClick={() => onNavigateToReceipt && onNavigateToReceipt(inv, false)}
-                          className="text-[10px] text-emerald-700 hover:text-emerald-900 font-bold flex items-center gap-1 mt-1 bg-emerald-50 hover:bg-emerald-100 px-1.5 py-0.5 rounded transition cursor-pointer border border-emerald-200/60"
+                          className="text-[10px] text-emerald-700 hover:text-emerald-900 font-bold flex items-center gap-1 mt-1 bg-emerald-50 hover:bg-emerald-100 px-1.5 py-0.5 rounded transition cursor-pointer border border-emerald-200/60 w-fit"
                         >
                           <Receipt className="w-3 h-3 shrink-0 text-emerald-600" />
                           <span>Recibo: {inv.linkedReceiptNo}</span>
                         </button>
                       )}
-                      {inv.type === 'FT' && !inv.linkedReceiptNo && inv.status === 'EMITIDO' && (
-                        <button
-                          type="button"
-                          onClick={() => onNavigateToReceipt && onNavigateToReceipt(inv, true)}
-                          className="text-[10px] text-brand hover:text-brand-hover font-bold flex items-center gap-1 mt-1 bg-brand-light hover:bg-brand/15 px-1.5 py-0.5 rounded transition cursor-pointer border border-brand/20"
-                        >
-                          <Plus className="w-3 h-3 shrink-0" />
-                          <span>Emitir Recibo (RC)</span>
-                        </button>
-                      )}
+                      {(() => {
+                        const hasCreditNote = invoices.some(i => i.type === 'NC' && i.rectifiedInvoiceNo === inv.invoiceNo);
+                        const canEmitReceipt = inv.type === 'FT' && !inv.linkedReceiptNo && inv.status === 'EMITIDO' && !hasCreditNote;
+                        if (canEmitReceipt) {
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => onNavigateToReceipt && onNavigateToReceipt(inv, true)}
+                              className="text-[10px] text-brand hover:text-brand-hover font-bold flex items-center gap-1 mt-1 bg-brand-light hover:bg-brand/15 px-1.5 py-0.5 rounded transition cursor-pointer border border-brand/20 w-fit"
+                            >
+                              <Plus className="w-3 h-3 shrink-0" />
+                              <span>Emitir Recibo (RC)</span>
+                            </button>
+                          );
+                        }
+                        return null;
+                      })()}
                     </td>
                     <td className="p-4">
                       <div className="flex flex-col gap-1 items-start">

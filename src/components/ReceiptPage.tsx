@@ -184,9 +184,12 @@ export default function ReceiptPage({
   const getCustomerOutstandingInvoices = (customerId: string) => {
     if (!customerId) return [];
 
-    // 1. Get all FT invoices for this customer that are EMITIDO
+    // 1. Get all FT invoices for this customer that are EMITIDO and not credited/rectified
     const customerFts = invoices.filter(
-      inv => inv.type === 'FT' && inv.customer.id === customerId && inv.status === 'EMITIDO'
+      inv => inv.type === 'FT' && 
+             inv.customer.id === customerId && 
+             inv.status === 'EMITIDO' &&
+             !invoices.some(i => i.type === 'NC' && i.rectifiedInvoiceNo === inv.invoiceNo)
     );
 
     // 2. Map through each FT to calculate unpaid balance

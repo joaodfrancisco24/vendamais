@@ -288,7 +288,7 @@ export default function AgtIntegration({
                   value={privateKey}
                   onChange={(e) => setPrivateKey(e.target.value)}
                   placeholder="-----BEGIN RSA PRIVATE KEY-----&#10;MIIEowIBAAKCAQEA0B6sZ0h66oQvB2H...&#10;-----END RSA PRIVATE KEY-----"
-                  className="w-full p-3 bg-slate-900 text-brand-light font-mono text-xxs border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand leading-normal"
+                  className="w-full p-3 bg-white text-slate-900 font-mono text-xxs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand leading-normal"
                 />
               </div>
 
@@ -302,7 +302,7 @@ export default function AgtIntegration({
                   value={publicKey}
                   onChange={(e) => setPublicKey(e.target.value)}
                   placeholder="-----BEGIN PUBLIC KEY-----&#10;MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...&#10;-----END PUBLIC KEY-----"
-                  className="w-full p-3 bg-slate-900 text-brand-light font-mono text-xxs border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand leading-normal"
+                  className="w-full p-3 bg-white text-slate-900 font-mono text-xxs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand leading-normal"
                 />
               </div>
 

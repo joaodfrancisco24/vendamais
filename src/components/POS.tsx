@@ -423,7 +423,7 @@ export default function POS({
         </div>
       )}
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 xl:h-[calc(100vh-150px)] h-auto min-h-screen xl:min-h-0 animate-fadeIn" id="pos-root-container">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 xl:h-[calc(100vh-100px)] h-auto min-h-screen xl:min-h-0 animate-fadeIn" id="pos-root-container">
       {/* LEFT SIDEBAR: Cart and Summary Config */}
       <div className="xl:col-span-5 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between overflow-hidden h-[620px] xl:h-full" id="pos-left-panel">
         
@@ -825,7 +825,7 @@ export default function POS({
               {/* Document Type Selector */}
               <div>
                 <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5">Tipo de Documento</label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <button
                     id="btn-type-ft"
                     onClick={() => setInvoiceType('FT')}
@@ -861,18 +861,6 @@ export default function POS({
                   >
                     <span className="text-[10px] font-extrabold bg-purple-600/10 px-1.5 py-0.5 rounded text-purple-800">FP</span>
                     Proforma
-                  </button>
-                  <button
-                    id="btn-type-nc"
-                    onClick={() => setInvoiceType('NC')}
-                    className={`py-2 px-2 border rounded-xl text-xs font-bold transition flex flex-col items-center gap-1 ${
-                      invoiceType === 'NC'
-                        ? 'border-amber-500 bg-amber-50/50 text-amber-700'
-                        : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    <span className="text-[10px] font-extrabold bg-amber-600/10 px-1.5 py-0.5 rounded text-amber-800">NC</span>
-                    Nota Crédito
                   </button>
                 </div>
               </div>

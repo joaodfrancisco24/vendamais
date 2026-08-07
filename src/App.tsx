@@ -219,7 +219,8 @@ const INITIAL_COMPANY: CompanyConfig = {
       swiftCode: 'BAIPAULOX',
       isDefault: true
     }
-  ]
+  ],
+  themeMode: 'light'
 };
 
 const INITIAL_KEYS: KeysConfig = {
@@ -241,6 +242,9 @@ M2y8n3kXv4m7t9u8z1m3Y7t9u8M4pLpM1sCfeR5S9Vv0W1g1uK1M3vC6a7dGg2k
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [preselectedInvoiceForReceipt, setPreselectedInvoiceForReceipt] = useState<Invoice | null>(null);
+  const [selectedInvoiceNoToView, setSelectedInvoiceNoToView] = useState<string | null>(null);
+  const [selectedReceiptNoToView, setSelectedReceiptNoToView] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
   const [isQuickCustomerOpen, setIsQuickCustomerOpen] = useState<boolean>(false);
@@ -326,6 +330,14 @@ export default function App() {
 
   // Load and sync from Node.js Express server
   const [syncTrigger, setSyncTrigger] = useState(0);
+
+  useEffect(() => {
+    if (company && company.themeMode === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [company]);
 
   useEffect(() => {
     const handleDbStatusChanged = () => {
@@ -792,8 +804,22 @@ export default function App() {
   // Emit invoice & decrement stock
   const handleEmitInvoice = (invoice: Invoice) => {
     const currentInvoices = Array.isArray(invoices) ? invoices : [];
-    const updatedInvoices = [...currentInvoices, invoice];
-    saveInvoices(updatedInvoices);
+    
+    let updatedInvoices = [...currentInvoices];
+    if (invoice.type === 'RC' && invoice.linkedInvoiceNo) {
+      updatedInvoices = updatedInvoices.map((inv) => {
+        if (inv.invoiceNo === invoice.linkedInvoiceNo) {
+          return {
+            ...inv,
+            linkedReceiptNo: invoice.invoiceNo
+          };
+        }
+        return inv;
+      });
+    }
+    
+    const finalInvoices = [...updatedInvoices, invoice];
+    saveInvoices(finalInvoices);
 
     // Decrement stock for inventory products
     const currentProducts = Array.isArray(products) ? products : [];
@@ -1416,6 +1442,7 @@ export default function App() {
             onEmitInvoice={handleEmitInvoice}
             onNavigate={(tab) => handleNavigateWithPermission(tab)}
             lastInvoiceHash={lastInvoiceHash}
+            onAddCustomer={addCustomer}
           />
         )}
 
@@ -1428,6 +1455,7 @@ export default function App() {
             products={products}
             customers={customers}
             company={company}
+            onAddCustomer={addCustomer}
           />
         )}
 
@@ -1499,6 +1527,18 @@ export default function App() {
             products={products}
             currentUser={currentUser}
             onEmitCreditNote={handleEmitCreditNote}
+            selectedInvoiceNoToView={selectedInvoiceNoToView}
+            onClearSelectedInvoiceNoToView={() => setSelectedInvoiceNoToView(null)}
+            onNavigateToReceipt={(invoice, createNew = false) => {
+              if (createNew) {
+                setPreselectedInvoiceForReceipt(invoice);
+                setSelectedReceiptNoToView(null); // Clear any view targets
+              } else if (invoice.linkedReceiptNo) {
+                setSelectedReceiptNoToView(invoice.linkedReceiptNo);
+                setPreselectedInvoiceForReceipt(null);
+              }
+              setActiveTab('recibo');
+            }}
           />
         )}
 
@@ -1511,6 +1551,14 @@ export default function App() {
             currentUser={currentUser}
             onEmitInvoice={handleEmitInvoice}
             lastInvoiceHash={lastInvoiceHash}
+            preselectedInvoice={preselectedInvoiceForReceipt}
+            onClearPreselected={() => setPreselectedInvoiceForReceipt(null)}
+            selectedReceiptNoToView={selectedReceiptNoToView}
+            onClearSelectedReceiptNoToView={() => setSelectedReceiptNoToView(null)}
+            onNavigateToInvoice={(invoiceNo) => {
+              setSelectedInvoiceNoToView(invoiceNo);
+              setActiveTab('invoices');
+            }}
           />
         )}
 

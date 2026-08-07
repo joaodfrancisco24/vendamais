@@ -2,9 +2,11 @@
 # Nota: O ficheiro ".env" original é ocultado automaticamente pela barra lateral do editor.
 # Este ficheiro "env-config.txt" e ".env.example" reflectem os dados ativos no seu servidor:
 
+
 DB_HOST=95.217.5.136
 DB_PORT=3306
 DB_USER=itecdmin_sistema_venda
-DB_PASSWORD=vc&Hh12weSe?98iW
+DB_PASSWORD=WU,QeY_9zcTWAnIZ
 DB_NAME=itecdmin_sistema_venda
 DB_FORCE_ORIGINAL=true
+

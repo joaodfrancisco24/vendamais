@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { Truck, Users, PlusCircle, Trash2, Calendar, FileText, CheckCircle2, ChevronRight, MapPin, Printer, History, Search, Eye, ArrowLeft } from 'lucide-react';
 import { Product, Customer, CompanyConfig } from '../types';
 import { printElement } from '../utils/print';
+import CustomerSearchSelector from './CustomerSearchSelector';
 
 interface DeliveryGuideProps {
   products: Product[];
   customers: Customer[];
   company: CompanyConfig;
+  onAddCustomer?: (customer: Customer) => void;
 }
 
 interface GuideItem {
@@ -14,7 +16,7 @@ interface GuideItem {
   quantity: number;
 }
 
-export default function DeliveryGuide({ products, customers, company }: DeliveryGuideProps) {
+export default function DeliveryGuide({ products, customers, company, onAddCustomer }: DeliveryGuideProps) {
   const [selectedCustomerId, setSelectedCustomerId] = useState(customers[0]?.id || '');
   
   const [guideSeq, setGuideSeq] = useState(() => {
@@ -269,20 +271,19 @@ export default function DeliveryGuide({ products, customers, company }: Delivery
                 {/* Cliente Destinatário */}
                 <div className="md:col-span-2">
                   <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Destinatário (Cliente / Empresa) *</label>
-                  <div className="relative">
-                    <select
-                      value={selectedCustomerId}
-                      onChange={(e) => handleCustomerChange(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand"
-                    >
-                      {customers.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name} (NIF: {c.nif})
-                        </option>
-                      ))}
-                    </select>
-                    <Users className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-                  </div>
+                  <CustomerSearchSelector
+                    id="guide-customer-select"
+                    customers={customers}
+                    value={selectedCustomerId}
+                    onChange={handleCustomerChange}
+                    onAddCustomer={(c) => {
+                      if (onAddCustomer) {
+                        onAddCustomer(c);
+                      }
+                      handleCustomerChange(c.id);
+                    }}
+                    placeholder="Pesquisar ou adicionar cliente..."
+                  />
                 </div>
 
                 {/* Motorista */}

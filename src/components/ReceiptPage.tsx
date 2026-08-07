@@ -33,6 +33,7 @@ import {
 import { Invoice, CompanyConfig, KeysConfig, Customer, InvoiceLine, InvoiceType, AppUser } from '../types';
 import { printElement } from '../utils/print';
 import { signInvoice } from '../utils/signature';
+import CustomerSearchSelector from './CustomerSearchSelector';
 
 interface ReceiptPageProps {
   invoices: Invoice[];
@@ -42,6 +43,12 @@ interface ReceiptPageProps {
   currentUser?: AppUser;
   onEmitInvoice: (invoice: Invoice) => void;
   lastInvoiceHash: string;
+  preselectedInvoice?: Invoice | null;
+  onClearPreselected?: () => void;
+  selectedReceiptNoToView?: string | null;
+  onClearSelectedReceiptNoToView?: () => void;
+  onNavigateToInvoice?: (invoiceNo: string) => void;
+  onAddCustomer?: (customer: Customer) => void;
 }
 
 interface SettleInvoiceItem {
@@ -58,7 +65,13 @@ export default function ReceiptPage({
   keys,
   currentUser,
   onEmitInvoice,
-  lastInvoiceHash
+  lastInvoiceHash,
+  preselectedInvoice,
+  onClearPreselected,
+  selectedReceiptNoToView,
+  onClearSelectedReceiptNoToView,
+  onNavigateToInvoice,
+  onAddCustomer
 }: ReceiptPageProps) {
   const [activeView, setActiveView] = useState<'list' | 'create'>('list');
   const [searchTerm, setSearchTerm] = useState('');
@@ -106,6 +119,44 @@ export default function ReceiptPage({
     window.addEventListener('focus', checkShift);
     return () => window.removeEventListener('focus', checkShift);
   }, []);
+
+  // 1. Handle selectedReceiptNoToView
+  useEffect(() => {
+    if (selectedReceiptNoToView) {
+      const found = invoices.find(inv => inv.invoiceNo === selectedReceiptNoToView);
+      if (found) {
+        setSelectedReceipt(found);
+        setPrintFormat('a4');
+        setActiveView('list');
+      }
+      if (onClearSelectedReceiptNoToView) {
+        onClearSelectedReceiptNoToView();
+      }
+    }
+  }, [selectedReceiptNoToView, invoices, onClearSelectedReceiptNoToView]);
+
+  // 2. Handle preselectedInvoice
+  useEffect(() => {
+    if (preselectedInvoice) {
+      setActiveView('create');
+      setSelectedCustomerId(preselectedInvoice.customer.id);
+    }
+  }, [preselectedInvoice]);
+
+  // 3. Pre-select specific invoice once pendingItems are loaded
+  useEffect(() => {
+    if (preselectedInvoice && pendingItems.length > 0 && selectedCustomerId === preselectedInvoice.customer.id) {
+      const idx = pendingItems.findIndex(item => item.invoice.invoiceNo === preselectedInvoice.invoiceNo);
+      if (idx !== -1 && !pendingItems[idx].selected) {
+        const updated = [...pendingItems];
+        updated[idx].selected = true;
+        setPendingItems(updated);
+        if (onClearPreselected) {
+          onClearPreselected();
+        }
+      }
+    }
+  }, [preselectedInvoice, pendingItems, selectedCustomerId, onClearPreselected]);
 
   // Filter receipts (type === 'RC')
   const receiptsList = useMemo(() => {
@@ -503,23 +554,19 @@ export default function ReceiptPage({
                   <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">
                     Escolha o Cliente *
                   </label>
-                  <select
+                  <CustomerSearchSelector
                     id="receipt-customer-select"
+                    customers={customers}
                     value={selectedCustomerId}
-                    onChange={(e) => setSelectedCustomerId(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200/80 rounded-xl text-xs font-bold focus:outline-none focus:bg-white focus:ring-2 focus:ring-brand"
-                  >
-                    <option value="">-- Selecione o Cliente --</option>
-                    {customers.map(c => {
-                      const pending = getCustomerOutstandingInvoices(c.id);
-                      if (pending.length === 0) return null; // Only show clients with outstanding bills
-                      return (
-                        <option key={c.id} value={c.id}>
-                          {c.name} (NIF: {c.nif}) — {pending.length} Pendentes
-                        </option>
-                      );
-                    }).filter(Boolean)}
-                  </select>
+                    onChange={(id) => setSelectedCustomerId(id)}
+                    onAddCustomer={(c) => {
+                      if (onAddCustomer) {
+                        onAddCustomer(c);
+                      }
+                      setSelectedCustomerId(c.id);
+                    }}
+                    placeholder="Pesquisar ou adicionar cliente..."
+                  />
                 </div>
 
                 {selectedCustomerId && (() => {
@@ -531,6 +578,11 @@ export default function ReceiptPage({
                       <p><strong>Nome Completo:</strong> {cust.name}</p>
                       <p><strong>NIF Fiscal:</strong> <code className="font-bold text-slate-900 font-mono">{cust.nif}</code></p>
                       {cust.address && <p><strong>Endereço:</strong> {cust.address}</p>}
+                      {pendingItems.length === 0 && (
+                        <p className="text-amber-600 font-bold mt-1 text-[10px] bg-amber-50 border border-amber-200 p-1.5 rounded-lg">
+                          Aviso: Este cliente não possui faturas pendentes de pagamento.
+                        </p>
+                      )}
                     </div>
                   );
                 })()}
@@ -925,7 +977,18 @@ export default function ReceiptPage({
                       {selectedReceipt.items.map((line, idx) => (
                         <tr key={idx} className="border-b border-gray-50">
                           <td className="py-1">
-                            <p className="font-bold">{line.productCode}</p>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedReceipt(null);
+                                if (onNavigateToInvoice) {
+                                  onNavigateToInvoice(line.productCode);
+                                }
+                              }}
+                              className="text-brand hover:text-brand-dark underline font-bold cursor-pointer font-mono text-[10px]"
+                            >
+                              {line.productCode}
+                            </button>
                             <p className="text-[8px] text-gray-500">Liquidação de Factura</p>
                           </td>
                           <td className="text-right font-bold">{formatKz(line.total)}</td>
@@ -1034,7 +1097,20 @@ export default function ReceiptPage({
                       <tbody className="divide-y divide-slate-100 font-medium">
                         {selectedReceipt.items.map((item, idx) => (
                           <tr key={idx} className="hover:bg-slate-50/50">
-                            <td className="py-2.5 font-mono font-bold text-slate-950">{item.productCode}</td>
+                            <td className="py-2.5 font-mono font-bold text-slate-950">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedReceipt(null);
+                                  if (onNavigateToInvoice) {
+                                    onNavigateToInvoice(item.productCode);
+                                  }
+                                }}
+                                className="text-brand hover:text-brand-dark underline font-black cursor-pointer font-mono"
+                              >
+                                {item.productCode}
+                              </button>
+                            </td>
                             <td className="py-2.5 text-slate-600 font-bold">Liquidação de Crédito de Factura Original</td>
                             <td className="py-2.5 text-center font-mono">1</td>
                             <td className="py-2.5 text-right text-slate-500 font-mono">Isento (M02)</td>

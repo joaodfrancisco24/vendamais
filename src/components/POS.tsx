@@ -31,6 +31,7 @@ import { Product, Customer, Invoice, InvoiceLine, InvoiceType, CompanyConfig, Ke
 import { signInvoice } from '../utils/signature';
 import { printElement } from '../utils/print';
 import PrintSettingsModal, { getDocumentPrintFormat } from './PrintSettingsModal';
+import CustomerSearchSelector from './CustomerSearchSelector';
 
 interface POSProps {
   products: Product[];
@@ -41,6 +42,7 @@ interface POSProps {
   onEmitInvoice: (invoice: Invoice) => void;
   onNavigate: (tab: string) => void;
   lastInvoiceHash: string;
+  onAddCustomer?: (customer: Customer) => void;
 }
 
 interface CartItem {
@@ -57,7 +59,8 @@ export default function POS({
   currentUser,
   onEmitInvoice,
   onNavigate,
-  lastInvoiceHash
+  lastInvoiceHash,
+  onAddCustomer = () => {}
 }: POSProps) {
   // POS States
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -69,6 +72,7 @@ export default function POS({
   const [invoiceNotes, setInvoiceNotes] = useState('');
   const [invoiceType, setInvoiceType] = useState<InvoiceType>('FR'); // FR is default for retail
   const [paymentTerm, setPaymentTerm] = useState('Pronto Pagamento');
+  const [withholdingTaxRate, setWithholdingTaxRate] = useState<number>(0);
 
   // Shift state check
   const [isShiftOpen, setIsShiftOpen] = useState<boolean>(() => {
@@ -198,15 +202,20 @@ export default function POS({
 
     // Recalculate tax if general discount affects base (typically pro-rated)
     const finalTaxTotal = taxTotal * (1 - generalDiscount / 100);
-    const total = finalSubtotal; // Subtotal represents the gross cash to pay
+    
+    // In Angola, withholding tax (Retenção na Fonte) is calculated on the taxable basis (Subtotal excluding IVA)
+    const baseTributavel = finalSubtotal - finalTaxTotal;
+    const withholdingTaxAmount = baseTributavel * (withholdingTaxRate / 100);
+    const total = finalSubtotal - withholdingTaxAmount;
 
     return {
       subtotal: finalSubtotal + discountTotal - finalTaxTotal, // Net total
       discountTotal,
       taxTotal: finalTaxTotal,
-      total: finalSubtotal // Gross total
+      withholdingTaxAmount,
+      total // Gross total after withholding tax deduction
     };
-  }, [cart, generalDiscount]);
+  }, [cart, generalDiscount, withholdingTaxRate]);
 
   // Add to cart
   const addToCart = (product: Product) => {
@@ -342,6 +351,8 @@ export default function POS({
         discountTotal: cartTotals.discountTotal,
         taxTotal: cartTotals.taxTotal,
         total: cartTotals.total,
+        withholdingTaxRate,
+        withholdingTaxAmount: cartTotals.withholdingTaxAmount,
         paymentMethod,
         cashReceived: paymentMethod === 'Numerário' || paymentMethod === 'Misto' ? (cashReceived || 0) : undefined,
         cardReceived: paymentMethod === 'Misto' ? (cardReceived || 0) : undefined,
@@ -361,6 +372,7 @@ export default function POS({
       setIsCheckoutOpen(false);
       setCart([]);
       setGeneralDiscount(0);
+      setWithholdingTaxRate(0);
       setInvoiceNotes('');
       setCashReceived(0);
       setCardReceived(0);
@@ -435,8 +447,8 @@ export default function POS({
             <div className="text-right font-mono">{formatKz(cartTotals.taxTotal)}</div>
             <div className="text-white/80">Desconto Geral:</div>
             <div className="text-right font-mono">-{formatKz(cartTotals.discountTotal)}</div>
-            <div className="text-white/80">Retenção (6.5%):</div>
-            <div className="text-right font-mono">0,00 Kz</div>
+            <div className="text-white/80">Retenção ({withholdingTaxRate}%):</div>
+            <div className="text-right font-mono">-{formatKz(cartTotals.withholdingTaxAmount || 0)}</div>
           </div>
 
           <div className="border-t border-white/30 pt-2 flex justify-between items-center">
@@ -520,21 +532,14 @@ export default function POS({
             {/* Customer Selection */}
             <div>
               <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Cartão Cliente / NIF</label>
-              <div className="relative">
-                <select
-                  id="pos-customer-select"
-                  value={selectedCustomerId}
-                  onChange={(e) => setSelectedCustomerId(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
-                >
-                  {customers.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} (NIF: {c.nif})
-                    </option>
-                  ))}
-                </select>
-                <User className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-              </div>
+              <CustomerSearchSelector
+                id="pos-customer"
+                customers={customers}
+                value={selectedCustomerId}
+                onChange={setSelectedCustomerId}
+                onAddCustomer={onAddCustomer}
+                placeholder="Pesquisar cliente por nome ou NIF..."
+              />
             </div>
 
             {/* Notes */}
@@ -550,10 +555,10 @@ export default function POS({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-2">
               {/* General Discount */}
               <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Desconto Geral %</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Desc. Geral %</label>
                 <div className="relative">
                   <input 
                     type="number"
@@ -563,9 +568,26 @@ export default function POS({
                     value={generalDiscount || ''}
                     onChange={(e) => setGeneralDiscount(Number(e.target.value))}
                     placeholder="0"
-                    className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
+                    className="w-full pl-7 pr-1 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand"
                   />
-                  <Percent className="absolute left-2.5 top-2 w-3.5 h-3.5 text-slate-400" />
+                  <Percent className="absolute left-2 top-2.5 w-3.5 h-3.5 text-slate-400" />
+                </div>
+              </div>
+
+              {/* Retenção na Fonte */}
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Retenção %</label>
+                <div className="relative">
+                  <select
+                    id="pos-withholding-select"
+                    value={withholdingTaxRate}
+                    onChange={(e) => setWithholdingTaxRate(Number(e.target.value))}
+                    className="w-full pl-7 pr-1 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand"
+                  >
+                    <option value="0">Sem Ret.</option>
+                    <option value="6.5">6.5% (Serv.)</option>
+                  </select>
+                  <Sliders className="absolute left-2 top-2.5 w-3.5 h-3.5 text-slate-400" />
                 </div>
               </div>
 
@@ -577,13 +599,13 @@ export default function POS({
                     id="pos-term-select"
                     value={paymentTerm}
                     onChange={(e) => setPaymentTerm(e.target.value)}
-                    className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand"
+                    className="w-full pl-7 pr-1 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand"
                   >
-                    <option value="Pronto Pagamento">Pronto Pagamento</option>
-                    <option value="30 Dias">30 Dias (Crédito)</option>
+                    <option value="Pronto Pagamento">Pronto</option>
+                    <option value="30 Dias">30 Dias</option>
                     <option value="60 Dias">60 Dias</option>
                   </select>
-                  <Clock className="absolute left-2.5 top-2 w-3.5 h-3.5 text-slate-400" />
+                  <Clock className="absolute left-2 top-2.5 w-3.5 h-3.5 text-slate-400" />
                 </div>
               </div>
             </div>
@@ -805,18 +827,6 @@ export default function POS({
                 <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5">Tipo de Documento</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <button
-                    id="btn-type-fr"
-                    onClick={() => setInvoiceType('FR')}
-                    className={`py-2 px-2 border rounded-xl text-xs font-bold transition flex flex-col items-center gap-1 ${
-                      invoiceType === 'FR'
-                        ? 'border-brand bg-brand-light text-brand'
-                        : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    <span className="text-[10px] font-extrabold bg-brand-light px-1.5 py-0.5 rounded text-brand">FR</span>
-                    Factura-Recibo
-                  </button>
-                  <button
                     id="btn-type-ft"
                     onClick={() => setInvoiceType('FT')}
                     className={`py-2 px-2 border rounded-xl text-xs font-bold transition flex flex-col items-center gap-1 ${
@@ -827,6 +837,18 @@ export default function POS({
                   >
                     <span className="text-[10px] font-extrabold bg-brand-light px-1.5 py-0.5 rounded text-brand">FT</span>
                     Factura
+                  </button>
+                  <button
+                    id="btn-type-fr"
+                    onClick={() => setInvoiceType('FR')}
+                    className={`py-2 px-2 border rounded-xl text-xs font-bold transition flex flex-col items-center gap-1 ${
+                      invoiceType === 'FR'
+                        ? 'border-brand bg-brand-light text-brand'
+                        : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className="text-[10px] font-extrabold bg-brand-light px-1.5 py-0.5 rounded text-brand">FR</span>
+                    Factura-Recibo
                   </button>
                   <button
                     id="btn-type-fp"
@@ -1035,10 +1057,28 @@ export default function POS({
                 )}
               </div>
 
+              {/* Totals Breakdown in checkout */}
+              <div className="px-1 text-xxs text-slate-500 space-y-1 my-2">
+                <div className="flex justify-between">
+                  <span>Subtotal Liquidado:</span>
+                  <span className="font-mono font-semibold">{formatKz(cartTotals.subtotal)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Imposto (IVA 14%):</span>
+                  <span className="font-mono font-semibold">{formatKz(cartTotals.taxTotal)}</span>
+                </div>
+                {withholdingTaxRate > 0 && (
+                  <div className="flex justify-between text-rose-600 font-medium">
+                    <span>Retenção na Fonte ({withholdingTaxRate}%):</span>
+                    <span className="font-mono font-bold">-{formatKz(cartTotals.withholdingTaxAmount || 0)}</span>
+                  </div>
+                )}
+              </div>
+
               {/* Total Display */}
-              <div className="p-4 bg-gray-50 rounded-2xl flex justify-between items-center border border-gray-100">
-                <span className="text-xs font-bold text-gray-500">Valor Total a Pagar</span>
-                <span className="text-xl font-extrabold text-gray-950 font-mono">
+              <div className="p-4 bg-brand text-white rounded-2xl flex justify-between items-center shadow-md">
+                <span className="text-xs font-bold">Valor Líquido a Pagar</span>
+                <span className="text-xl font-black font-mono">
                   {formatKz(cartTotals.total)}
                 </span>
               </div>
@@ -1224,6 +1264,9 @@ export default function POS({
                       <p>Subtotal: {formatKz(issuedInvoice.subtotal)}</p>
                       <p>Total IVA: {formatKz(issuedInvoice.taxTotal)}</p>
                       <p>Desconto Total: -{formatKz(issuedInvoice.discountTotal)}</p>
+                      {issuedInvoice.withholdingTaxRate && issuedInvoice.withholdingTaxRate > 0 ? (
+                        <p>Retenção ({issuedInvoice.withholdingTaxRate}%): -{formatKz(issuedInvoice.withholdingTaxAmount || 0)}</p>
+                      ) : null}
                       <p className="font-extrabold text-xs text-gray-900 pt-1">
                         TOTAL PAGO: {formatKz(issuedInvoice.total)}
                       </p>
@@ -1383,8 +1426,14 @@ export default function POS({
                           <span>Total Imposto (IVA 14%):</span>
                           <span className="font-mono">{formatKz(issuedInvoice.taxTotal)}</span>
                         </div>
+                        {issuedInvoice.withholdingTaxRate && issuedInvoice.withholdingTaxRate > 0 ? (
+                          <div className="flex justify-between text-rose-600 font-medium border-t border-slate-100 pt-1">
+                            <span>Retenção ({issuedInvoice.withholdingTaxRate}%):</span>
+                            <span className="font-mono">-{formatKz(issuedInvoice.withholdingTaxAmount || 0)}</span>
+                          </div>
+                        ) : null}
                         <div className="border-t border-slate-200 pt-2 flex justify-between font-black text-sm text-slate-900">
-                          <span>VALOR TOTAL:</span>
+                          <span>{issuedInvoice.type === 'FT' ? 'TOTAL A PAGAR:' : 'VALOR TOTAL:'}</span>
                           <span className="font-mono text-brand">{formatKz(issuedInvoice.total)}</span>
                         </div>
                       </div>

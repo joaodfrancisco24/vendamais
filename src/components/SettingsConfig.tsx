@@ -23,6 +23,7 @@ export default function SettingsConfig({ company, onUpdateCompany }: SettingsCon
   const [invoicingMode, setInvoicingMode] = useState<'saft' | 'electronic'>(company.invoicingMode || 'saft');
   const [primaryColor, setPrimaryColor] = useState<string>(company.primaryColor || 'blue');
   const [logoUrl, setLogoUrl] = useState<string>(company.logoUrl || '');
+  const [themeMode, setThemeMode] = useState<'light' | 'dark'>(company.themeMode || 'light');
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -93,6 +94,7 @@ export default function SettingsConfig({ company, onUpdateCompany }: SettingsCon
         setBankAccounts(company.bankAccounts);
       }
       setShowBankDetailsOnInvoices(company.showBankDetailsOnInvoices !== false);
+      setThemeMode(company.themeMode || 'light');
     }
   }, [company]);
 
@@ -307,7 +309,8 @@ export default function SettingsConfig({ company, onUpdateCompany }: SettingsCon
       primaryColor,
       logoUrl,
       bankAccounts,
-      showBankDetailsOnInvoices
+      showBankDetailsOnInvoices,
+      themeMode
     });
     setIsConfirmOpen(false);
     setShowSuccess(true);
@@ -720,6 +723,73 @@ export default function SettingsConfig({ company, onUpdateCompany }: SettingsCon
                   />
                 </div>
               </div>
+
+              {/* Tema do Sistema (Claro / Escuro) */}
+              <div className="pt-4 border-t border-slate-200/60 space-y-3">
+                <div>
+                  <span className="text-xs font-bold text-slate-900 block">Modo de Aparência (Tema)</span>
+                  <span className="text-[10px] text-slate-500 font-medium block">Selecione o estilo visual preferido para a interface do sistema</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Modo Claro */}
+                  <div
+                    id="theme-mode-light"
+                    onClick={() => {
+                      setThemeMode('light');
+                      document.documentElement.classList.remove('dark');
+                    }}
+                    className={`p-4 rounded-xl border-2 transition cursor-pointer flex items-center gap-3.5 bg-white ${
+                      themeMode === 'light'
+                        ? 'border-brand shadow-xs'
+                        : 'border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="shrink-0">
+                      {themeMode === 'light' ? (
+                        <div className="w-5 h-5 rounded-full border-2 border-brand flex items-center justify-center bg-white">
+                          <div className="w-2.5 h-2.5 rounded-full bg-brand" />
+                        </div>
+                      ) : (
+                        <div className="w-5 h-5 rounded-full border-2 border-slate-300" />
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-xs text-slate-900">Tema Claro (Light)</h4>
+                      <p className="text-[10px] text-slate-500 mt-0.5">Interface clássica, limpa e com contrastes suaves.</p>
+                    </div>
+                  </div>
+
+                  {/* Modo Escuro */}
+                  <div
+                    id="theme-mode-dark"
+                    onClick={() => {
+                      setThemeMode('dark');
+                      document.documentElement.classList.add('dark');
+                    }}
+                    className={`p-4 rounded-xl border-2 transition cursor-pointer flex items-center gap-3.5 bg-white ${
+                      themeMode === 'dark'
+                        ? 'border-brand shadow-xs'
+                        : 'border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="shrink-0">
+                      {themeMode === 'dark' ? (
+                        <div className="w-5 h-5 rounded-full border-2 border-brand flex items-center justify-center bg-white">
+                          <div className="w-2.5 h-2.5 rounded-full bg-brand" />
+                        </div>
+                      ) : (
+                        <div className="w-5 h-5 rounded-full border-2 border-slate-300" />
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-xs text-slate-900">Tema Escuro (Dark)</h4>
+                      <p className="text-[10px] text-slate-500 mt-0.5">Interface escura, moderna e confortável para os olhos.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
 

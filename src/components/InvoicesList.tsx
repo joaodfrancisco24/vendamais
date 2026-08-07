@@ -20,7 +20,8 @@ import {
   Plus,
   AlertTriangle,
   RefreshCw,
-  FileX
+  FileX,
+  Receipt
 } from 'lucide-react';
 import { Invoice, CompanyConfig, KeysConfig, Product, InvoiceLine, AppUser } from '../types';
 import { printElement } from '../utils/print';
@@ -34,6 +35,9 @@ interface InvoicesListProps {
   products?: Product[];
   currentUser?: AppUser;
   onEmitCreditNote?: (creditNote: Invoice, originalInvoiceNo: string, restoreStock: boolean) => void;
+  selectedInvoiceNoToView?: string | null;
+  onClearSelectedInvoiceNoToView?: () => void;
+  onNavigateToReceipt?: (invoice: Invoice, createNew?: boolean) => void;
 }
 
 export default function InvoicesList({
@@ -42,7 +46,10 @@ export default function InvoicesList({
   keys,
   products = [],
   currentUser,
-  onEmitCreditNote
+  onEmitCreditNote,
+  selectedInvoiceNoToView,
+  onClearSelectedInvoiceNoToView,
+  onNavigateToReceipt
 }: InvoicesListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'ALL' | 'FR' | 'FT' | 'FP' | 'NC'>('ALL');
@@ -55,6 +62,20 @@ export default function InvoicesList({
       setPrintFormat(docConf.format === 'A4' ? 'a4' : 'ticket');
     }
   }, [selectedInvoice]);
+
+  useEffect(() => {
+    if (selectedInvoiceNoToView) {
+      const found = invoices.find(inv => inv.invoiceNo === selectedInvoiceNoToView);
+      if (found) {
+        setSelectedInvoice(found);
+        const docConf = getDocumentPrintFormat(found.type);
+        setPrintFormat(docConf.format === 'A4' ? 'a4' : 'ticket');
+      }
+      if (onClearSelectedInvoiceNoToView) {
+        onClearSelectedInvoiceNoToView();
+      }
+    }
+  }, [selectedInvoiceNoToView, invoices, onClearSelectedInvoiceNoToView]);
 
   // Credit Note Modal state
   const [showCreditNoteModal, setShowCreditNoteModal] = useState(false);
@@ -200,6 +221,26 @@ export default function InvoicesList({
                           <RotateCcw className="w-3 h-3 shrink-0" />
                           <span>Rectifica: {inv.rectifiedInvoiceNo}</span>
                         </p>
+                      )}
+                      {inv.linkedReceiptNo && (
+                        <button
+                          type="button"
+                          onClick={() => onNavigateToReceipt && onNavigateToReceipt(inv, false)}
+                          className="text-[10px] text-emerald-700 hover:text-emerald-900 font-bold flex items-center gap-1 mt-1 bg-emerald-50 hover:bg-emerald-100 px-1.5 py-0.5 rounded transition cursor-pointer border border-emerald-200/60"
+                        >
+                          <Receipt className="w-3 h-3 shrink-0 text-emerald-600" />
+                          <span>Recibo: {inv.linkedReceiptNo}</span>
+                        </button>
+                      )}
+                      {inv.type === 'FT' && !inv.linkedReceiptNo && inv.status === 'EMITIDO' && (
+                        <button
+                          type="button"
+                          onClick={() => onNavigateToReceipt && onNavigateToReceipt(inv, true)}
+                          className="text-[10px] text-brand hover:text-brand-hover font-bold flex items-center gap-1 mt-1 bg-brand-light hover:bg-brand/15 px-1.5 py-0.5 rounded transition cursor-pointer border border-brand/20"
+                        >
+                          <Plus className="w-3 h-3 shrink-0" />
+                          <span>Emitir Recibo (RC)</span>
+                        </button>
                       )}
                     </td>
                     <td className="p-4">
@@ -423,6 +464,21 @@ export default function InvoicesList({
                       <span>NÚMERO:</span>
                       <span className="font-bold">{selectedInvoice.invoiceNo}</span>
                     </div>
+                    {selectedInvoice.linkedReceiptNo && (
+                      <div className="flex justify-between text-emerald-800 font-bold">
+                        <span>RECIBO VINC.:</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedInvoice(null);
+                            if (onNavigateToReceipt) onNavigateToReceipt(selectedInvoice, false);
+                          }}
+                          className="underline hover:text-emerald-950 cursor-pointer font-mono font-bold"
+                        >
+                          {selectedInvoice.linkedReceiptNo}
+                        </button>
+                      </div>
+                    )}
                     {selectedInvoice.rectifiedInvoiceNo && (
                       <div className="flex justify-between text-amber-800 font-bold">
                         <span>RECTIFICA:</span>
@@ -479,8 +535,11 @@ export default function InvoicesList({
                   <div className="space-y-1 text-right pt-2 border-t border-dashed border-gray-200">
                     <p>Subtotal: {formatKz(selectedInvoice.subtotal)}</p>
                     <p>Total IVA: {formatKz(selectedInvoice.taxTotal)}</p>
+                    {selectedInvoice.withholdingTaxRate && selectedInvoice.withholdingTaxRate > 0 ? (
+                      <p>Retenção ({selectedInvoice.withholdingTaxRate}%): -{formatKz(selectedInvoice.withholdingTaxAmount || 0)}</p>
+                    ) : null}
                     <p className="font-extrabold text-xs text-gray-900 pt-1">
-                      TOTAL: {selectedInvoice.type === 'NC' ? `- ${formatKz(selectedInvoice.total)}` : formatKz(selectedInvoice.total)}
+                      {selectedInvoice.type === 'FT' ? 'TOTAL A PAGAR:' : 'TOTAL:'} {selectedInvoice.type === 'NC' ? `- ${formatKz(selectedInvoice.total)}` : formatKz(selectedInvoice.total)}
                     </p>
                   </div>
 
@@ -545,6 +604,21 @@ export default function InvoicesList({
                         <p>Data Emissão: <strong className="text-white font-mono">{selectedInvoice.date}</strong></p>
                         {selectedInvoice.rectifiedInvoiceNo && (
                           <p className="text-amber-200 font-bold">Doc. Rectificado: <strong className="text-white font-mono">{selectedInvoice.rectifiedInvoiceNo}</strong></p>
+                        )}
+                        {selectedInvoice.linkedReceiptNo && (
+                          <p className="text-emerald-300 font-bold">
+                            Recibo Vinc.:{' '}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedInvoice(null);
+                                if (onNavigateToReceipt) onNavigateToReceipt(selectedInvoice, false);
+                              }}
+                              className="text-white hover:text-emerald-200 underline font-mono cursor-pointer font-black"
+                            >
+                              {selectedInvoice.linkedReceiptNo}
+                            </button>
+                          </p>
                         )}
                         <p>Moeda: <strong className="text-white font-mono">AOA (Kz)</strong></p>
                       </div>
@@ -619,8 +693,14 @@ export default function InvoicesList({
                         <span>Total Imposto (IVA 14%):</span>
                         <span className="font-mono">{formatKz(selectedInvoice.taxTotal)}</span>
                       </div>
+                      {selectedInvoice.withholdingTaxRate && selectedInvoice.withholdingTaxRate > 0 ? (
+                        <div className="flex justify-between text-rose-600 font-medium border-t border-slate-100 pt-1">
+                          <span>Retenção ({selectedInvoice.withholdingTaxRate}%):</span>
+                          <span className="font-mono">-{formatKz(selectedInvoice.withholdingTaxAmount || 0)}</span>
+                        </div>
+                      ) : null}
                       <div className="border-t border-slate-200 pt-2 flex justify-between font-black text-sm text-slate-900">
-                        <span>VALOR TOTAL:</span>
+                        <span>{selectedInvoice.type === 'FT' ? 'TOTAL A PAGAR:' : 'VALOR TOTAL:'}</span>
                         <span className="font-mono text-brand">{selectedInvoice.type === 'NC' ? `- ${formatKz(selectedInvoice.total)}` : formatKz(selectedInvoice.total)}</span>
                       </div>
                     </div>

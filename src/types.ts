@@ -59,6 +59,8 @@ export interface Invoice {
   discountTotal: number;
   taxTotal: number;
   total: number;
+  withholdingTaxRate?: number;
+  withholdingTaxAmount?: number;
   paymentMethod: 'Numerário' | 'Multicaixa' | 'Transferência' | 'Misto';
   cashReceived?: number;
   cardReceived?: number;
@@ -73,6 +75,8 @@ export interface Invoice {
   signedBy: string; // Certificate ID / developer ID
   rectifiedInvoiceNo?: string; // Original invoice number rectifying e.g. "FT VMAIS2026/001"
   reason?: string; // Reason for credit note / rectification
+  linkedReceiptNo?: string; // For FT - linked receipt invoiceNo
+  linkedInvoiceNo?: string; // For RC - linked invoice invoiceNo
 }
 
 export interface KeysConfig {
@@ -137,6 +141,7 @@ export interface CompanyConfig {
   bankAccounts?: BankAccount[];
   showBankDetailsOnInvoices?: boolean;
   printSettings?: PrintSettingsConfig;
+  themeMode?: 'light' | 'dark';
 }
 
 export type UserRole = 'admin' | 'operator';

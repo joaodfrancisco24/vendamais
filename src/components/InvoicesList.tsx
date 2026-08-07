@@ -346,8 +346,8 @@ export default function InvoicesList({
                         </span>
 
                         {inv.status === 'RECTIFICADO' && (
-                          <span className="px-2 py-0.5 rounded text-[9px] font-extrabold bg-amber-50 text-amber-700 border border-amber-200">
-                            RECTIFICADO
+                          <span className="px-2 py-0.5 rounded text-[9px] font-extrabold bg-rose-50 text-rose-700 border border-rose-200">
+                            ANULADO
                           </span>
                         )}
                         {inv.status === 'ANULADO' && (
@@ -543,6 +543,12 @@ export default function InvoicesList({
 
                   <div className="border-t border-dashed border-gray-300 my-2"></div>
 
+                  {(selectedInvoice.status === 'RECTIFICADO' || selectedInvoice.status === 'ANULADO') && (
+                    <div className="text-center py-1 bg-rose-50 border border-rose-200 text-rose-700 font-black text-[9px] tracking-widest rounded my-1 uppercase animate-pulse">
+                      DOCUMENTO ANULADO
+                    </div>
+                  )}
+
                   {/* Doc type / Number */}
                   <div className="space-y-1">
                     <div className="flex justify-between">
@@ -630,7 +636,7 @@ export default function InvoicesList({
                       <p>Retenção ({selectedInvoice.withholdingTaxRate}%): -{formatKz(selectedInvoice.withholdingTaxAmount || 0)}</p>
                     ) : null}
                     <p className="font-extrabold text-xs text-gray-900 pt-1">
-                      {selectedInvoice.type === 'FT' ? 'TOTAL A PAGAR:' : 'TOTAL:'} {selectedInvoice.type === 'NC' ? `- ${formatKz(selectedInvoice.total)}` : formatKz(selectedInvoice.total)}
+                      {selectedInvoice.type === 'FT' ? (selectedInvoice.linkedReceiptNo ? 'TOTAL PAGO:' : 'TOTAL A PAGAR:') : 'TOTAL:'} {selectedInvoice.type === 'NC' ? `- ${formatKz(selectedInvoice.total)}` : formatKz(selectedInvoice.total)}
                     </p>
                   </div>
 
@@ -722,6 +728,11 @@ export default function InvoicesList({
                       <div className={`inline-block px-2.5 py-0.5 rounded-full font-black text-[10px] tracking-wider uppercase mb-1 ${selectedInvoice.type === 'NC' ? 'bg-amber-500 text-slate-950' : 'bg-brand text-white'}`}>
                         {selectedInvoice.type === 'NC' ? 'NOTA DE CRÉDITO' : selectedInvoice.type === 'FR' ? 'FACTURA RECIBO' : selectedInvoice.type === 'FT' ? 'FACTURA' : 'PROFORMA'}
                       </div>
+                      {(selectedInvoice.status === 'RECTIFICADO' || selectedInvoice.status === 'ANULADO') && (
+                        <div className="text-rose-400 font-extrabold text-[9px] uppercase tracking-widest border border-rose-500/50 bg-rose-950/40 px-2 py-0.5 rounded text-center my-1 animate-pulse">
+                          DOCUMENTO ANULADO
+                        </div>
+                      )}
                       <h3 className="text-lg font-black font-mono tracking-tight text-white">{selectedInvoice.invoiceNo}</h3>
                       <div className="text-[11px] text-slate-200 font-medium space-y-0.5">
                         <p>Data Emissão: <strong className="text-white font-mono">{selectedInvoice.date}</strong></p>
@@ -861,7 +872,7 @@ export default function InvoicesList({
                         </div>
                       ) : null}
                       <div className="border-t border-slate-200 pt-2 flex justify-between font-black text-sm text-slate-900">
-                        <span>{selectedInvoice.type === 'FT' ? 'TOTAL A PAGAR:' : 'VALOR TOTAL:'}</span>
+                        <span>{selectedInvoice.type === 'FT' ? (selectedInvoice.linkedReceiptNo ? 'TOTAL PAGO:' : 'TOTAL A PAGAR:') : 'VALOR TOTAL:'}</span>
                         <span className="font-mono text-brand">{selectedInvoice.type === 'NC' ? `- ${formatKz(selectedInvoice.total)}` : formatKz(selectedInvoice.total)}</span>
                       </div>
                     </div>

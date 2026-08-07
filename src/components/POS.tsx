@@ -1610,7 +1610,7 @@ export default function POS({
                           </div>
                         ) : null}
                         <div className="border-t border-slate-200 pt-2 flex justify-between font-black text-sm text-slate-900">
-                          <span>{issuedInvoice.type === 'FT' ? 'TOTAL A PAGAR:' : 'VALOR TOTAL:'}</span>
+                          <span>{issuedInvoice.type === 'FT' ? (issuedInvoice.linkedReceiptNo ? 'TOTAL PAGO:' : 'TOTAL A PAGAR:') : 'VALOR TOTAL:'}</span>
                           <span className="font-mono text-brand">{formatKz(issuedInvoice.total)}</span>
                         </div>
                       </div>

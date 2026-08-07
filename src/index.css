@@ -1,0 +1,83 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+:root {
+  --brand-primary: #2563eb;
+  --brand-hover: #1d4ed8;
+  --brand-light: #eff6ff;
+  --brand-border: #bfdbfe;
+}
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-emerald-50: var(--brand-light);
+  --color-emerald-100: var(--brand-border);
+  --color-emerald-200: var(--brand-border);
+  --color-emerald-300: var(--brand-border);
+  --color-emerald-400: var(--brand-primary);
+  --color-emerald-500: var(--brand-primary);
+  --color-emerald-600: var(--brand-primary);
+  --color-emerald-700: var(--brand-hover);
+  --color-emerald-800: var(--brand-hover);
+  --color-emerald-900: var(--brand-hover);
+
+  --color-purple-50: var(--brand-light);
+  --color-purple-100: var(--brand-border);
+  --color-purple-200: var(--brand-border);
+  --color-purple-300: var(--brand-border);
+  --color-purple-400: var(--brand-primary);
+  --color-purple-500: var(--brand-primary);
+  --color-purple-600: var(--brand-primary);
+  --color-purple-700: var(--brand-hover);
+  --color-purple-800: var(--brand-hover);
+  --color-purple-900: var(--brand-hover);
+
+  --color-green-50: var(--brand-light);
+  --color-green-100: var(--brand-border);
+  --color-green-200: var(--brand-border);
+  --color-green-300: var(--brand-border);
+  --color-green-400: var(--brand-primary);
+  --color-green-500: var(--brand-primary);
+  --color-green-600: var(--brand-primary);
+  --color-green-700: var(--brand-hover);
+  --color-green-800: var(--brand-hover);
+  --color-green-900: var(--brand-hover);
+}
+
+/* Brand Theme Utility Classes */
+.bg-brand {
+  background-color: var(--brand-primary) !important;
+}
+
+.hover\:bg-brand-dark:hover {
+  background-color: var(--brand-hover) !important;
+}
+
+.bg-brand-light {
+  background-color: var(--brand-light) !important;
+}
+
+.text-brand {
+  color: var(--brand-primary) !important;
+}
+
+.border-brand {
+  border-color: var(--brand-primary) !important;
+}
+
+.border-brand-light {
+  border-color: var(--brand-border) !important;
+}
+
+.ring-brand:focus {
+  --tw-ring-color: var(--brand-primary) !important;
+}
+
+/* Compact scale adjustment */
+html, body {
+  font-size: 14px;
+}
+
+

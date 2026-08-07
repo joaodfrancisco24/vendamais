@@ -1,0 +1,8 @@
+{
+  "name": "Remix Remix VENDA MAIS",
+  "description": "Sistema de Gestão de Vendas, Facturação e Controlo de Stocks do Negomil Ecossistema Web com conformidade AGT, emissão de Facturas-Recibo (FR/FT), guias de remessa, gestão de armazéns e exportação de ficheiro SAF-T (AO).",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1654,6 +1654,8 @@ export default function App() {
           <FinancialReports 
             invoices={invoices}
             products={products}
+            customers={customers}
+            onNavigate={(tab) => handleNavigateWithPermission(tab)}
           />
         )}
 

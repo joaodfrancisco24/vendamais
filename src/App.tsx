@@ -56,6 +56,7 @@ import ShiftManagement from './components/ShiftManagement';
 import UserManagement from './components/UserManagement';
 import LoginPage from './components/LoginPage';
 import ReceiptPage from './components/ReceiptPage';
+import UnpaidInvoices from './components/UnpaidInvoices';
 
 const DEFAULT_USERS: AppUser[] = [
   {
@@ -1070,6 +1071,23 @@ export default function App() {
                 </div>
               </button>
 
+              {/* Faturas por Liquidar */}
+              <button
+                id="nav-btn-faturas-por-liquidar"
+                onClick={() => handleNavigateWithPermission('faturas-por-liquidar')}
+                className={`w-full py-2 px-3 rounded-lg text-xs transition flex items-center justify-between ${
+                  activeTab === 'faturas-por-liquidar'
+                    ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
+                    : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
+                }`}
+                title="FATURA POR LIQUIDAR"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Clock className={`w-4 h-4 ${activeTab === 'faturas-por-liquidar' ? 'text-brand' : 'text-slate-400'}`} />
+                  {!isCollapsed && <span>FATURA POR LIQUIDAR</span>}
+                </div>
+              </button>
+
               {/* Operações Gerais */}
               <button
                 id="nav-btn-operacoes"
@@ -1630,6 +1648,23 @@ export default function App() {
             onNavigateToInvoice={(invoiceNo) => {
               setSelectedInvoiceNoToView(invoiceNo);
               setActiveTab('invoices');
+            }}
+          />
+        )}
+
+        {activeTab === 'faturas-por-liquidar' && (
+          <UnpaidInvoices 
+            invoices={invoices}
+            customers={customers}
+            company={company}
+            onViewInvoice={(invoiceNo) => {
+              setSelectedInvoiceNoToView(invoiceNo);
+              setActiveTab('invoices');
+            }}
+            onSettleInvoice={(invoice) => {
+              setPreselectedInvoiceForReceipt(invoice);
+              setSelectedReceiptNoToView(null);
+              setActiveTab('recibo');
             }}
           />
         )}

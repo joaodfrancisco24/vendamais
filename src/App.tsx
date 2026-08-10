@@ -21,6 +21,7 @@ import {
   ShoppingCart,
   Activity,
   Truck,
+  Navigation,
   Warehouse,
   Coins,
   Lock,
@@ -1096,6 +1097,23 @@ export default function App() {
                 </div>
               </button>
 
+              {/* Guia de Transporte */}
+              <button
+                id="nav-btn-guia-transporte"
+                onClick={() => handleNavigateWithPermission('guia-transporte')}
+                className={`w-full py-2 px-3 rounded-lg text-xs transition flex items-center justify-between ${
+                  activeTab === 'guia-transporte'
+                    ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
+                    : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
+                }`}
+                title="Guia de Transporte"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Navigation className={`w-4 h-4 ${activeTab === 'guia-transporte' ? 'text-brand' : 'text-slate-400'}`} />
+                  {!isCollapsed && <span>Guia de Transporte</span>}
+                </div>
+              </button>
+
               {/* Documentos */}
               <button
                 id="nav-btn-invoices"
@@ -1454,6 +1472,19 @@ export default function App() {
 
         {activeTab === 'guia' && (
           <DeliveryGuide 
+            key="guia-remessa"
+            guideType="remessa"
+            products={products}
+            customers={customers}
+            company={company}
+            onAddCustomer={addCustomer}
+          />
+        )}
+
+        {activeTab === 'guia-transporte' && (
+          <DeliveryGuide 
+            key="guia-transporte"
+            guideType="transporte"
             products={products}
             customers={customers}
             company={company}

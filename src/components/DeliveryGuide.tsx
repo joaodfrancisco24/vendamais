@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Truck, Users, PlusCircle, Trash2, Calendar, FileText, CheckCircle2, ChevronRight, MapPin, Printer, History, Search, Eye, ArrowLeft } from 'lucide-react';
+import { Truck, Users, PlusCircle, Trash2, Calendar, FileText, CheckCircle2, ChevronRight, MapPin, Printer, History, Search, Eye, ArrowLeft, ShieldAlert } from 'lucide-react';
 import { Product, Customer, CompanyConfig } from '../types';
 import { printElement } from '../utils/print';
 import CustomerSearchSelector from './CustomerSearchSelector';
@@ -9,6 +9,8 @@ interface DeliveryGuideProps {
   customers: Customer[];
   company: CompanyConfig;
   onAddCustomer?: (customer: Customer) => void;
+  guideType?: 'remessa' | 'transporte';
+  key?: React.Key;
 }
 
 interface GuideItem {
@@ -16,15 +18,22 @@ interface GuideItem {
   quantity: number;
 }
 
-export default function DeliveryGuide({ products, customers, company, onAddCustomer }: DeliveryGuideProps) {
+export default function DeliveryGuide({ products, customers, company, onAddCustomer, guideType = 'remessa' }: DeliveryGuideProps) {
+  const isTransport = guideType === 'transporte';
+  const labelDocSingular = isTransport ? 'Guia de Transporte' : 'Guia de Remessa';
+  const prefixDoc = isTransport ? 'GT' : 'GR';
+  const storageSeqKey = isTransport ? 'transport_guide_seq' : 'delivery_guide_seq';
+  const storageGuidesKey = isTransport ? 'saved_transport_guides' : 'saved_delivery_guides';
+
   const [selectedCustomerId, setSelectedCustomerId] = useState(customers[0]?.id || '');
+  const [deleteConfirmGuide, setDeleteConfirmGuide] = useState<any | null>(null);
   
   const [guideSeq, setGuideSeq] = useState(() => {
-    const saved = localStorage.getItem('delivery_guide_seq');
+    const saved = localStorage.getItem(storageSeqKey);
     return saved ? parseInt(saved, 10) : 24;
   });
 
-  const generateGuideNo = (seq: number) => `GR 04P2026/${seq}`;
+  const generateGuideNo = (seq: number) => `${prefixDoc} 04P2026/${seq}`;
 
   const [guideNumber, setGuideNumber] = useState(() => generateGuideNo(guideSeq));
   const [vRef, setVRef] = useState(() => generateGuideNo(guideSeq));
@@ -57,7 +66,7 @@ export default function DeliveryGuide({ products, customers, company, onAddCusto
   const [issuedGuide, setIssuedGuide] = useState<any | null>(null);
 
   const [savedGuides, setSavedGuides] = useState<any[]>(() => {
-    const saved = localStorage.getItem('saved_delivery_guides');
+    const saved = localStorage.getItem(storageGuidesKey);
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -142,12 +151,12 @@ export default function DeliveryGuide({ products, customers, company, onAddCusto
     // Increment guide sequence for next guide emission
     const nextSeq = guideSeq + 1;
     setGuideSeq(nextSeq);
-    localStorage.setItem('delivery_guide_seq', nextSeq.toString());
+    localStorage.setItem(storageSeqKey, nextSeq.toString());
 
     // Save to history
     const updatedGuides = [newGuide, ...savedGuides];
     setSavedGuides(updatedGuides);
-    localStorage.setItem('saved_delivery_guides', JSON.stringify(updatedGuides));
+    localStorage.setItem(storageGuidesKey, JSON.stringify(updatedGuides));
 
     setIssuedGuide(newGuide);
   };
@@ -159,12 +168,17 @@ export default function DeliveryGuide({ products, customers, company, onAddCusto
     setIssuedGuide(null);
   };
 
-  const handleDeleteGuide = (id: string, e: React.MouseEvent) => {
+  const handleDeleteGuide = (guide: any, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm('Tem certeza que deseja remover esta guia do histórico?')) {
-      const updated = savedGuides.filter(g => g.id !== id);
+    setDeleteConfirmGuide(guide);
+  };
+
+  const handleConfirmDeleteGuide = () => {
+    if (deleteConfirmGuide) {
+      const updated = savedGuides.filter(g => g.id !== deleteConfirmGuide.id);
       setSavedGuides(updated);
-      localStorage.setItem('saved_delivery_guides', JSON.stringify(updated));
+      localStorage.setItem(storageGuidesKey, JSON.stringify(updated));
+      setDeleteConfirmGuide(null);
     }
   };
 
@@ -179,8 +193,8 @@ export default function DeliveryGuide({ products, customers, company, onAddCusto
       {/* Title */}
       <div className="border-b border-slate-100 pb-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-slate-900">Guia de Remessa / Transporte</h1>
-          <p className="text-sm text-slate-500">Emissão e consulta de documentos de transporte no formato oficial AGT</p>
+          <h1 className="text-2xl font-black tracking-tight text-slate-900">{labelDocSingular}</h1>
+          <p className="text-sm text-slate-500">Emissão e consulta de documentos de circulação de mercadorias no formato oficial AGT</p>
         </div>
 
         {!issuedGuide && (
@@ -195,7 +209,7 @@ export default function DeliveryGuide({ products, customers, company, onAddCusto
               }`}
             >
               <FileText className="w-4 h-4" />
-              Emitir Nova Guia
+              Emitir Novo Documento
             </button>
             <button
               type="button"
@@ -207,7 +221,7 @@ export default function DeliveryGuide({ products, customers, company, onAddCusto
               }`}
             >
               <History className="w-4 h-4" />
-              Histórico de Guias ({savedGuides.length})
+              Histórico de Documentos ({savedGuides.length})
             </button>
           </div>
         )}
@@ -220,7 +234,7 @@ export default function DeliveryGuide({ products, customers, company, onAddCusto
           <form onSubmit={handleEmit} className="lg:col-span-8 bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-6">
             <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2 border-b border-slate-100 pb-3">
               <Truck className="w-4 h-4 text-brand" />
-              Emitir Nova Guia de Remessa (AGT)
+              Emitir Nova {labelDocSingular} (AGT)
             </h3>
 
             {/* Step 1: Customer & Transport details */}
@@ -231,7 +245,7 @@ export default function DeliveryGuide({ products, customers, company, onAddCusto
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* N.º da Guia */}
                 <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">N.º Guia de Remessa *</label>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">N.º {labelDocSingular} *</label>
                   <input
                     type="text"
                     required
@@ -446,7 +460,7 @@ export default function DeliveryGuide({ products, customers, company, onAddCusto
                     ) : (
                       <tr>
                         <td colSpan={5} className="p-8 text-center text-slate-400">
-                          Nenhum artigo adicionado à Guia de Transporte ainda.
+                          Nenhum artigo adicionado à {labelDocSingular} ainda.
                         </td>
                       </tr>
                     )}
@@ -462,7 +476,7 @@ export default function DeliveryGuide({ products, customers, company, onAddCusto
                 className="px-6 py-3 bg-brand text-white font-black text-xs rounded-xl hover:bg-brand-dark transition flex items-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
               >
                 <FileText className="w-4 h-4" />
-                GERAR GUIA DE REMESSA (MODELO OFICIAL)
+                GERAR {labelDocSingular.toUpperCase()} (MODELO OFICIAL)
               </button>
             </div>
           </form>
@@ -472,10 +486,10 @@ export default function DeliveryGuide({ products, customers, company, onAddCusto
             <div className="bg-slate-900 text-white p-6 rounded-3xl border border-slate-800 shadow-sm space-y-4">
               <h3 className="font-bold text-base text-white flex items-center gap-2">
                 <Truck className="w-5 h-5 text-brand" />
-                Guia de Remessa Oficial
+                {labelDocSingular} Oficial
               </h3>
               <p className="text-xs text-slate-300 leading-relaxed">
-                Esta Guia de Remessa segue rigorosamente o layout e campos legais utilizados em Angola para acompanhamento de mercadorias em circulação (SISTEC / ITECMA).
+                Este documento segue rigorosamente o layout e campos legais utilizados em Angola para acompanhamento de mercadorias em circulação (SISTEC / ITECMA).
               </p>
               <div className="space-y-3 pt-2">
                 <div className="flex gap-3 text-xs">
@@ -569,7 +583,7 @@ export default function DeliveryGuide({ products, customers, company, onAddCusto
                   ) : (
                     <tr>
                       <td colSpan={6} className="p-8 text-center text-slate-400">
-                        {searchTerm ? 'Nenhuma guia encontrada para a pesquisa.' : 'Nenhuma guia de remessa emitida ainda.'}
+                        {searchTerm ? 'Nenhuma guia encontrada para a pesquisa.' : `Nenhuma ${labelDocSingular.toLowerCase()} emitida ainda.`}
                       </td>
                     </tr>
                   )}
@@ -585,7 +599,7 @@ export default function DeliveryGuide({ products, customers, company, onAddCusto
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-6 h-6 text-emerald-500" />
               <div>
-                <h4 className="font-bold text-slate-900 text-sm">Guia de Remessa ({issuedGuide.guideNumber})</h4>
+                <h4 className="font-bold text-slate-900 text-sm">{labelDocSingular} ({issuedGuide.guideNumber})</h4>
                 <p className="text-xs text-slate-500">Documento pronto para impressão e acompanhamento de transporte rodoviário.</p>
               </div>
             </div>
@@ -672,7 +686,7 @@ export default function DeliveryGuide({ products, customers, company, onAddCusto
             {/* 2. Document Title */}
             <div className="pt-4">
               <h3 className="font-black text-base text-black tracking-tight">
-                Guia de Remessa n.º {issuedGuide.guideNumber}
+                {labelDocSingular} n.º {issuedGuide.guideNumber}
               </h3>
             </div>
 
@@ -784,6 +798,42 @@ export default function DeliveryGuide({ products, customers, company, onAddCusto
               <div className="text-right font-semibold text-black">
                 Página 1/1
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE CONFIRMATION MODAL */}
+      {deleteConfirmGuide && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-md w-full border border-slate-200 shadow-2xl overflow-hidden p-6 space-y-4 animate-scaleIn">
+            <div className="flex items-center gap-3 text-rose-600">
+              <div className="p-2.5 bg-rose-50 rounded-2xl border border-rose-100">
+                <ShieldAlert className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-black text-sm text-slate-900">Remover {labelDocSingular}</h3>
+                <p className="text-xs text-slate-500 font-medium">Esta ação é irreversível</p>
+              </div>
+            </div>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Tem a certeza de que deseja remover a <strong className="text-slate-900">{labelDocSingular} ({deleteConfirmGuide.guideNumber})</strong> do histórico?
+            </p>
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmGuide(null)}
+                className="flex-1 py-2.5 border border-slate-200 text-slate-700 font-bold text-xs rounded-xl hover:bg-slate-50 transition cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteGuide}
+                className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl transition shadow-md cursor-pointer"
+              >
+                Remover
+              </button>
             </div>
           </div>
         </div>

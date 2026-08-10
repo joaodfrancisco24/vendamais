@@ -177,7 +177,7 @@ export default function FinancialReports({ invoices, products }: FinancialReport
               const percentHeight = maxMonthValue > 0 ? (month.value / maxValForScale) * 100 : 0;
               return (
                 <div key={month.key} className="flex-1 flex flex-col items-center gap-2 group">
-                  <div className="w-3 sm:w-4.5 bg-slate-50 hover:bg-slate-100 rounded-lg h-[120px] flex items-end overflow-hidden transition relative">
+                  <div className="w-1.5 sm:w-2 bg-slate-50 hover:bg-slate-100 rounded-full h-[120px] flex items-end overflow-hidden transition relative">
                     <div 
                       style={{ height: `${percentHeight}%` }}
                       className="w-full bg-brand group-hover:bg-brand-dark transition-all rounded-t flex items-center justify-center relative shadow-xs"

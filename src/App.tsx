@@ -249,6 +249,7 @@ export default function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
   const [isQuickCustomerOpen, setIsQuickCustomerOpen] = useState<boolean>(false);
+  const [isGuiasExpanded, setIsGuiasExpanded] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<string>('');
 
   // Users & Roles State
@@ -331,6 +332,12 @@ export default function App() {
 
   // Load and sync from Node.js Express server
   const [syncTrigger, setSyncTrigger] = useState(0);
+
+  useEffect(() => {
+    if (activeTab === 'guia' || activeTab === 'guia-transporte') {
+      setIsGuiasExpanded(true);
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     if (company && company.themeMode === 'dark') {
@@ -1009,11 +1016,11 @@ export default function App() {
                       ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
                       : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
                   }`}
-                  title="Painel Geral"
+                  title="PAINEL GERAL"
                 >
                   <div className="flex items-center gap-2.5">
                     <LayoutDashboard className={`w-4 h-4 ${activeTab === 'dashboard' ? 'text-brand' : 'text-slate-400'}`} />
-                    {!isCollapsed && <span>Painel Geral</span>}
+                    {!isCollapsed && <span>PAINEL GERAL</span>}
                   </div>
                 </button>
               </div>
@@ -1055,11 +1062,11 @@ export default function App() {
                     ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
                     : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
                 }`}
-                title="Recibos (RC)"
+                title="RECIBOS (RC)"
               >
                 <div className="flex items-center gap-2.5">
                   <Receipt className={`w-4 h-4 ${activeTab === 'recibo' ? 'text-brand' : 'text-slate-400'}`} />
-                  {!isCollapsed && <span>Recibos (RC)</span>}
+                  {!isCollapsed && <span>RECIBOS (RC)</span>}
                 </div>
               </button>
 
@@ -1072,47 +1079,78 @@ export default function App() {
                     ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
                     : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
                 }`}
-                title="Operações Gerais"
+                title="OPERAÇÕES GERAIS"
               >
                 <div className="flex items-center gap-2.5">
                   <Activity className={`w-4 h-4 ${activeTab === 'operacoes' ? 'text-brand' : 'text-slate-400'}`} />
-                  {!isCollapsed && <span>Operações Gerais</span>}
+                  {!isCollapsed && <span>OPERAÇÕES GERAIS</span>}
                 </div>
               </button>
 
-              {/* Guia de Remessa */}
-              <button
-                id="nav-btn-guia"
-                onClick={() => handleNavigateWithPermission('guia')}
-                className={`w-full py-2 px-3 rounded-lg text-xs transition flex items-center justify-between ${
-                  activeTab === 'guia'
-                    ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
-                    : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
-                }`}
-                title="Guia de Remessa"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Truck className={`w-4 h-4 ${activeTab === 'guia' ? 'text-brand' : 'text-slate-400'}`} />
-                  {!isCollapsed && <span>Guia de Remessa</span>}
-                </div>
-              </button>
+              {/* GUIAS Section (Expandable) */}
+              <div className="space-y-1">
+                <button
+                  id="nav-btn-guias-group"
+                  onClick={() => setIsGuiasExpanded(!isGuiasExpanded)}
+                  className={`w-full py-2 px-3 rounded-lg text-xs transition flex items-center justify-between ${
+                    activeTab === 'guia' || activeTab === 'guia-transporte'
+                      ? 'bg-slate-800/30 text-white font-bold'
+                      : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
+                  }`}
+                  title="GUIAS DE CIRCULAÇÃO"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Truck className={`w-4 h-4 ${activeTab === 'guia' || activeTab === 'guia-transporte' ? 'text-brand' : 'text-slate-400'}`} />
+                    {!isCollapsed && <span>GUIAS</span>}
+                  </div>
+                  {!isCollapsed && (
+                    isGuiasExpanded ? (
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    ) : (
+                      <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    )
+                  )}
+                </button>
 
-              {/* Guia de Transporte */}
-              <button
-                id="nav-btn-guia-transporte"
-                onClick={() => handleNavigateWithPermission('guia-transporte')}
-                className={`w-full py-2 px-3 rounded-lg text-xs transition flex items-center justify-between ${
-                  activeTab === 'guia-transporte'
-                    ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
-                    : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
-                }`}
-                title="Guia de Transporte"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Navigation className={`w-4 h-4 ${activeTab === 'guia-transporte' ? 'text-brand' : 'text-slate-400'}`} />
-                  {!isCollapsed && <span>Guia de Transporte</span>}
-                </div>
-              </button>
+                {/* Submenu Options */}
+                {isGuiasExpanded && (
+                  <div className={`${!isCollapsed ? 'pl-4' : 'pl-0'} mt-1 space-y-1`}>
+                    {/* Guia de Remessa */}
+                    <button
+                      id="nav-btn-guia"
+                      onClick={() => handleNavigateWithPermission('guia')}
+                      className={`w-full py-1.5 px-3 rounded-lg text-[11px] transition flex items-center justify-between ${
+                        activeTab === 'guia'
+                          ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
+                          : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
+                      }`}
+                      title="GUIA DE REMESSA"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-slate-500 font-mono">--</span>
+                        <span>GUIA DE REMESSA</span>
+                      </div>
+                    </button>
+
+                    {/* Guia de Transporte */}
+                    <button
+                      id="nav-btn-guia-transporte"
+                      onClick={() => handleNavigateWithPermission('guia-transporte')}
+                      className={`w-full py-1.5 px-3 rounded-lg text-[11px] transition flex items-center justify-between ${
+                        activeTab === 'guia-transporte'
+                          ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
+                          : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
+                      }`}
+                      title="GUIA DE TRANSPORTE"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-slate-500 font-mono">--</span>
+                        <span>GUIA DE TRANSPORTE</span>
+                      </div>
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {/* Documentos */}
               <button
@@ -1123,11 +1161,11 @@ export default function App() {
                     ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
                     : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
                 }`}
-                title="Documentos"
+                title="DOCUMENTOS"
               >
                 <div className="flex items-center gap-2.5">
                   <FileText className={`w-4 h-4 ${activeTab === 'invoices' ? 'text-brand' : 'text-slate-400'}`} />
-                  {!isCollapsed && <span>Documentos</span>}
+                  {!isCollapsed && <span>DOCUMENTOS</span>}
                 </div>
               </button>
             </div>
@@ -1152,11 +1190,11 @@ export default function App() {
                       ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
                       : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
                   }`}
-                  title="Armazéns"
+                  title="ARMAZÉNS"
                 >
                   <div className="flex items-center gap-2.5">
                     <Warehouse className={`w-4 h-4 ${activeTab === 'armazens' ? 'text-brand' : 'text-slate-400'}`} />
-                    {!isCollapsed && <span>Armazéns</span>}
+                    {!isCollapsed && <span>ARMAZÉNS</span>}
                   </div>
                 </button>
 
@@ -1169,11 +1207,11 @@ export default function App() {
                       ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
                       : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
                   }`}
-                  title="Meus Produtos"
+                  title="MEUS PRODUTOS"
                 >
                   <div className="flex items-center gap-2.5">
                     <Boxes className={`w-4 h-4 ${activeTab === 'products' ? 'text-brand' : 'text-slate-400'}`} />
-                    {!isCollapsed && <span>Meus Produtos</span>}
+                    {!isCollapsed && <span>MEUS PRODUTOS</span>}
                   </div>
                 </button>
               </div>
@@ -1199,11 +1237,11 @@ export default function App() {
                       ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
                       : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
                   }`}
-                  title="Módulo SAF-T (AO)"
+                  title="MÓDULO SAF-T (AO)"
                 >
                   <div className="flex items-center gap-2.5">
                     <FileText className={`w-4 h-4 ${activeTab === 'saft' ? 'text-brand' : 'text-slate-400'}`} />
-                    {!isCollapsed && <span>Módulo SAF-T (AO)</span>}
+                    {!isCollapsed && <span>MÓDULO SAF-T (AO)</span>}
                   </div>
                 </button>
               )}
@@ -1218,11 +1256,11 @@ export default function App() {
                       ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
                       : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
                   }`}
-                  title="Integração AGT"
+                  title="INTEGRAÇÃO AGT"
                 >
                   <div className="flex items-center gap-2.5">
                     <ShieldCheck className={`w-4 h-4 ${activeTab === 'agt' ? 'text-brand' : 'text-slate-400'}`} />
-                    {!isCollapsed && <span>Integração AGT</span>}
+                    {!isCollapsed && <span>INTEGRAÇÃO AGT</span>}
                   </div>
                 </button>
               )}
@@ -1237,11 +1275,11 @@ export default function App() {
                       ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
                       : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
                   }`}
-                  title="Relatórios Financeiros"
+                  title="RELATÓRIOS FINANCEIROS"
                 >
                   <div className="flex items-center gap-2.5">
                     <TrendingUp className={`w-4 h-4 ${activeTab === 'relatorios' ? 'text-brand' : 'text-slate-400'}`} />
-                    {!isCollapsed && <span>Relatórios Financeiros</span>}
+                    {!isCollapsed && <span>RELATÓRIOS FINANCEIROS</span>}
                   </div>
                 </button>
               )}
@@ -1256,11 +1294,11 @@ export default function App() {
                       ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
                       : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
                   }`}
-                  title="Saídas / Pagamentos"
+                  title="SAÍDAS / PAGAMENTOS"
                 >
                   <div className="flex items-center gap-2.5">
                     <Coins className={`w-4 h-4 ${activeTab === 'pagamentos' ? 'text-brand' : 'text-slate-400'}`} />
-                    {!isCollapsed && <span>Saídas / Pagamentos</span>}
+                    {!isCollapsed && <span>SAÍDAS / PAGAMENTOS</span>}
                   </div>
                 </button>
               )}
@@ -1274,11 +1312,11 @@ export default function App() {
                     ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
                     : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
                 }`}
-                title="Gestão de Turnos"
+                title="GESTÃO DE TURNOS"
               >
                 <div className="flex items-center gap-2.5">
                   <Clock className={`w-4 h-4 ${activeTab === 'turnos' ? 'text-brand' : 'text-slate-400'}`} />
-                  {!isCollapsed && <span>Gestão de Turnos</span>}
+                  {!isCollapsed && <span>GESTÃO DE TURNOS</span>}
                 </div>
               </button>
             </div>
@@ -1293,11 +1331,11 @@ export default function App() {
                     ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
                     : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
                 }`}
-                title="Clientes"
+                title="CLIENTES"
               >
                 <div className="flex items-center gap-2.5">
                   <Users className={`w-4 h-4 ${activeTab === 'customers' ? 'text-brand' : 'text-slate-400'}`} />
-                  {!isCollapsed && <span>Clientes</span>}
+                  {!isCollapsed && <span>CLIENTES</span>}
                 </div>
               </button>
             </div>
@@ -1321,11 +1359,11 @@ export default function App() {
                       ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
                       : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
                   }`}
-                  title="Utilizadores & Acessos"
+                  title="UTILIZADORES & ACESSOS"
                 >
                   <div className="flex items-center gap-2.5">
                     <Users className={`w-4 h-4 ${activeTab === 'users' ? 'text-brand' : 'text-slate-400'}`} />
-                    {!isCollapsed && <span>Utilizadores & Perfis</span>}
+                    {!isCollapsed && <span>UTILIZADORES & PERFIS</span>}
                   </div>
                 </button>
 
@@ -1337,11 +1375,11 @@ export default function App() {
                       ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
                       : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
                   }`}
-                  title="Configurações"
+                  title="CONFIGURAÇÕES"
                 >
                   <div className="flex items-center gap-2.5">
                     <Settings className={`w-4 h-4 ${activeTab === 'config' ? 'text-brand' : 'text-slate-400'}`} />
-                    {!isCollapsed && <span>Configurações Gerais</span>}
+                    {!isCollapsed && <span>CONFIGURAÇÕES GERAIS</span>}
                   </div>
                 </button>
               </div>
@@ -1375,7 +1413,7 @@ export default function App() {
             <div className="flex items-center gap-1.5 text-[9px] font-black border-t border-slate-200/60 pt-2">
               <span className={`inline-block w-2 h-2 rounded-full ${dbStatus.connected ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
               <span className={`${dbStatus.connected ? 'text-emerald-600' : 'text-amber-600'} uppercase tracking-wide`}>
-                {dbStatus.connected ? 'MySQL Ligado' : 'Ficheiros Locais (Fallback)'}
+                {dbStatus.connected ? 'MYSQL LIGADO' : 'FICHEIROS LOCAIS (FALLBACK)'}
               </span>
             </div>
           )}

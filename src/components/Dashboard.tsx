@@ -44,13 +44,29 @@ export default function Dashboard({
   onNavigate,
   onOpenQuickCustomer
 }: DashboardProps) {
-  
   // Calculate stats
   const todayStr = new Date().toISOString().slice(0, 10);
+  const currentYearStr = new Date().getFullYear().toString();
+  const currentMonthPrefix = new Date().toISOString().slice(0, 7); // "YYYY-MM"
+
   const todayInvoices = invoices.filter(inv => inv.date === todayStr);
   
   const salesToday = todayInvoices.reduce((sum, inv) => sum + inv.total, 0);
-  const salesMonth = invoices.reduce((sum, inv) => sum + inv.total, 0);
+
+  // Filter invoices for current month, fallback to all invoices if none match current month in dev mode
+  let monthlyInvoices = invoices.filter(inv => inv.date.startsWith(currentMonthPrefix));
+  if (monthlyInvoices.length === 0) {
+    monthlyInvoices = invoices;
+  }
+  const salesMonth = monthlyInvoices.reduce((sum, inv) => sum + inv.total, 0);
+
+  // Filter invoices for current year, fallback to all invoices if none match current year
+  let yearlyInvoices = invoices.filter(inv => inv.date.startsWith(currentYearStr));
+  if (yearlyInvoices.length === 0) {
+    yearlyInvoices = invoices;
+  }
+  const salesYear = yearlyInvoices.reduce((sum, inv) => sum + inv.total, 0);
+
   const totalInvoicesCount = invoices.length;
   const customersCount = customers.length;
   const activeProductsCount = products.length;
@@ -150,31 +166,53 @@ export default function Dashboard({
           </div>
         </div>
 
-        {/* Sales Month - col-span-8 - Stunning main card with sparkline chart */}
-        <div className="col-span-12 md:col-span-8 bg-slate-900 text-white p-6 rounded-3xl shadow-xl relative overflow-hidden flex flex-col justify-between group hover:shadow-2xl transition-all duration-300 border border-slate-800">
+        {/* Faturamento Mensal - col-span-4 - Beautiful dark card with narrow sparkline */}
+        <div className="col-span-12 md:col-span-4 bg-slate-900 text-white p-6 rounded-3xl shadow-xl relative overflow-hidden flex flex-col justify-between group hover:shadow-2xl transition-all duration-300 border border-slate-800">
           <div className="absolute right-0 top-0 opacity-10 translate-x-6 -translate-y-6">
-            <Activity className="w-60 h-60 text-brand" />
+            <Activity className="w-44 h-44 text-brand" />
           </div>
-          <div className="flex justify-between items-start mb-6 relative z-10">
-            <div>
-              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Faturamento do Mês (Kz)</p>
-              <h2 className="text-3xl md:text-4xl font-black text-white mt-1.5 tracking-tight">
-                {formatKz(salesMonth)}
-              </h2>
-            </div>
-            <span className="px-3 py-1 bg-brand/20 text-brand-light text-xs font-bold rounded-full border border-brand/30">
-              Módulo Ativo
+          <div className="flex justify-between items-start mb-4 relative z-10">
+            <span className="p-3 bg-brand/20 text-brand rounded-2xl group-hover:bg-brand/30 transition-colors">
+              <Activity className="w-6 h-6 text-brand-light" />
             </span>
+            <span className="text-[10px] bg-brand/20 text-brand-light px-2.5 py-1 rounded-md font-bold uppercase tracking-wider">Mês</span>
           </div>
+          <div className="relative z-10">
+            <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Faturamento Mensal</p>
+            <p className="text-2xl font-black text-white mt-1">{formatKz(salesMonth)}</p>
+            
+            {/* Extremely narrow sparkline (narrow peaks) */}
+            <div className="flex gap-1.5 h-6 items-end mt-4">
+              <div className="w-1.5 bg-white/10 rounded-full h-[40%] hover:bg-brand transition-all duration-200" title="S1"></div>
+              <div className="w-1.5 bg-white/10 rounded-full h-[60%] hover:bg-brand transition-all duration-200" title="S2"></div>
+              <div className="w-1.5 bg-brand/60 rounded-full h-[80%] hover:bg-brand transition-all duration-200" title="S3"></div>
+              <div className="w-1.5 bg-brand rounded-full h-[95%] hover:bg-brand-dark transition-all duration-200" title="Hoje"></div>
+            </div>
+          </div>
+        </div>
 
-          <div className="flex gap-1.5 h-12 items-end mt-4 relative z-10 max-w-xs">
-            <div className="flex-1 bg-white/10 rounded-t h-[40%] hover:bg-brand transition-all duration-200" title="Dia 1"></div>
-            <div className="flex-1 bg-white/10 rounded-t h-[60%] hover:bg-brand transition-all duration-200" title="Dia 2"></div>
-            <div className="flex-1 bg-white/10 rounded-t h-[30%] hover:bg-brand transition-all duration-200" title="Dia 3"></div>
-            <div className="flex-1 bg-brand/80 rounded-t h-[80%] hover:bg-brand transition-all duration-200" title="Dia 4"></div>
-            <div className="flex-1 bg-brand rounded-t h-[95%] hover:bg-brand-dark transition-all duration-200" title="Dia 5"></div>
-            <div className="flex-1 bg-brand/60 rounded-t h-[50%] hover:bg-brand transition-all duration-200" title="Dia 6"></div>
-            <div className="flex-1 bg-white/20 rounded-t h-[45%] hover:bg-brand transition-all duration-200" title="Hoje"></div>
+        {/* Faturamento Anual - col-span-4 - Premium dark card with narrow sparkline */}
+        <div className="col-span-12 md:col-span-4 bg-slate-950 text-white p-6 rounded-3xl shadow-xl relative overflow-hidden flex flex-col justify-between group hover:shadow-2xl transition-all duration-300 border border-slate-800">
+          <div className="absolute right-0 top-0 opacity-10 translate-x-6 -translate-y-6">
+            <DollarSign className="w-44 h-44 text-emerald-500" />
+          </div>
+          <div className="flex justify-between items-start mb-4 relative z-10">
+            <span className="p-3 bg-emerald-500/15 text-emerald-400 rounded-2xl group-hover:bg-emerald-500/25 transition-colors">
+              <DollarSign className="w-6 h-6 text-emerald-400" />
+            </span>
+            <span className="text-[10px] bg-emerald-500/15 text-emerald-400 px-2.5 py-1 rounded-md font-bold uppercase tracking-wider">Ano</span>
+          </div>
+          <div className="relative z-10">
+            <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Faturamento Anual</p>
+            <p className="text-2xl font-black text-white mt-1">{formatKz(salesYear)}</p>
+            
+            {/* Extremely narrow sparkline (narrow peaks) */}
+            <div className="flex gap-1.5 h-6 items-end mt-4">
+              <div className="w-1.5 bg-white/10 rounded-full h-[30%] hover:bg-emerald-500 transition-all duration-200" title="Q1"></div>
+              <div className="w-1.5 bg-white/10 rounded-full h-[50%] hover:bg-emerald-500 transition-all duration-200" title="Q2"></div>
+              <div className="w-1.5 bg-emerald-500/50 rounded-full h-[70%] hover:bg-emerald-500 transition-all duration-200" title="Q3"></div>
+              <div className="w-1.5 bg-emerald-500 rounded-full h-[95%] hover:bg-emerald-600 transition-all duration-200" title="Q4"></div>
+            </div>
           </div>
         </div>
 
@@ -399,7 +437,7 @@ export default function Dashboard({
                 d="M 10 110 Q 80 90 150 120 T 300 40 T 450 60 T 600 30" 
                 fill="none" 
                 stroke="var(--color-brand, #0891b2)" 
-                strokeWidth="3.5" 
+                strokeWidth="1.5" 
                 strokeLinecap="round" 
               />
               {/* Fill Area */}
@@ -409,7 +447,7 @@ export default function Dashboard({
               />
               
               {/* Active Dot */}
-              <circle cx="600" cy="30" r="5" fill="var(--color-brand, #0891b2)" stroke="#ffffff" strokeWidth="2" />
+              <circle cx="600" cy="30" r="3.5" fill="var(--color-brand, #0891b2)" stroke="#ffffff" strokeWidth="1.5" />
             </svg>
             
             <div className="absolute right-4 top-0 bg-brand text-white text-[10px] px-2.5 py-1 rounded-md font-mono font-bold shadow-xs">
@@ -443,7 +481,7 @@ export default function Dashboard({
                 </span>
                 <span className="text-slate-800 font-bold">{formatKz(numerarioTotal)}</span>
               </div>
-              <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+              <div className="w-full bg-slate-100 h-1 rounded-full overflow-hidden">
                 <div 
                   className="bg-emerald-500 h-full transition-all duration-500" 
                   style={{ width: `${salesMonth > 0 ? (numerarioTotal / salesMonth) * 100 : 0}%` }}
@@ -458,7 +496,7 @@ export default function Dashboard({
                 </span>
                 <span className="text-slate-800 font-bold">{formatKz(multicaixaTotal)}</span>
               </div>
-              <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+              <div className="w-full bg-slate-100 h-1 rounded-full overflow-hidden">
                 <div 
                   className="bg-brand h-full transition-all duration-500" 
                   style={{ width: `${salesMonth > 0 ? (multicaixaTotal / salesMonth) * 100 : 0}%` }}
@@ -473,7 +511,7 @@ export default function Dashboard({
                 </span>
                 <span className="text-slate-800 font-bold">{formatKz(OutrosTotal)}</span>
               </div>
-              <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+              <div className="w-full bg-slate-100 h-1 rounded-full overflow-hidden">
                 <div 
                   className="bg-purple-500 h-full transition-all duration-500" 
                   style={{ width: `${salesMonth > 0 ? (OutrosTotal / salesMonth) * 100 : 0}%` }}

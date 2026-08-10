@@ -4,8 +4,27 @@ import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import mysql from "mysql2/promise";
 import dotenv from "dotenv";
+import crypto from "crypto";
 
 dotenv.config();
+
+function hashPassword(password: string): string {
+  return crypto.createHash("sha256").update(password).digest("hex");
+}
+
+function verifyPassword(inputPassword: string, storedPasswordHashOrPlain: string): boolean {
+  if (!storedPasswordHashOrPlain) return false;
+  const hashedInput = hashPassword(inputPassword);
+  if (hashedInput === storedPasswordHashOrPlain) {
+    return true;
+  }
+  // Fallback: if stored password is not a 64-character SHA-256 hex string, support plain text
+  const isSha256 = /^[a-f0-9]{64}$/i.test(storedPasswordHashOrPlain);
+  if (!isSha256 && inputPassword === storedPasswordHashOrPlain) {
+    return true;
+  }
+  return false;
+}
 
 const app = express();
 const PORT = 3000;
@@ -1010,22 +1029,40 @@ app.get("/api/users", async (req, res) => {
         }));
         res.json(formatted);
       } else {
-        // Seed default users if empty
-        for (const u of DEFAULT_USERS) {
+        // Seed default users if empty (with hashed passwords)
+        const hashedDefaults = DEFAULT_USERS.map(u => ({
+          ...u,
+          password: hashPassword(u.password)
+        }));
+        for (const u of hashedDefaults) {
           await pool.query(
             "INSERT INTO users (id, name, username, email, role, password, pin, active, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             [u.id, u.name, u.username, u.email, u.role, u.password, u.pin, u.active ? 1 : 0, u.createdAt]
           ).catch(() => {});
         }
-        writeJSON(USERS_FILE, DEFAULT_USERS);
-        res.json(DEFAULT_USERS);
+        writeJSON(USERS_FILE, hashedDefaults);
+        res.json(hashedDefaults);
       }
     } catch (err: any) {
       console.error("MySQL fetch users error:", err.message);
-      res.json(readJSON(USERS_FILE, DEFAULT_USERS));
+      const local = readJSON(USERS_FILE, []);
+      if (local.length === 0) {
+        const hashedDefaults = DEFAULT_USERS.map(u => ({ ...u, password: hashPassword(u.password) }));
+        writeJSON(USERS_FILE, hashedDefaults);
+        res.json(hashedDefaults);
+      } else {
+        res.json(local);
+      }
     }
   } else {
-    res.json(readJSON(USERS_FILE, DEFAULT_USERS));
+    const local = readJSON(USERS_FILE, []);
+    if (local.length === 0) {
+      const hashedDefaults = DEFAULT_USERS.map(u => ({ ...u, password: hashPassword(u.password) }));
+      writeJSON(USERS_FILE, hashedDefaults);
+      res.json(hashedDefaults);
+    } else {
+      res.json(local);
+    }
   }
 });
 
@@ -1062,10 +1099,10 @@ app.post("/api/login", async (req, res) => {
     return res.status(403).json({ error: "Conta de utilizador desativada" });
   }
 
-  // Check password or fallback PIN
-  const passwordMatch = foundUser.password ? foundUser.password === password : (foundUser.pin === password || password === "1234");
+  // Check password strictly (PIN is no longer allowed for login)
+  const passwordMatch = verifyPassword(password, foundUser.password || "");
   if (!passwordMatch) {
-    return res.status(401).json({ error: "Senha ou PIN incorreto" });
+    return res.status(401).json({ error: "Senha de acesso incorreta" });
   }
 
   const userObj = {
@@ -1082,7 +1119,11 @@ app.post("/api/users", async (req, res) => {
     return res.status(400).json({ error: "Nome e Username são obrigatórios" });
   }
 
-  const currentList = readJSON(USERS_FILE, DEFAULT_USERS);
+  const rawPassword = newUser.password || '123456';
+  const hashedPassword = hashPassword(rawPassword);
+  newUser.password = hashedPassword;
+
+  const currentList = readJSON(USERS_FILE, []);
   const updatedList = [...currentList, newUser];
   writeJSON(USERS_FILE, updatedList);
 
@@ -1096,7 +1137,7 @@ app.post("/api/users", async (req, res) => {
           newUser.username,
           newUser.email || null,
           newUser.role || 'operator',
-          newUser.password || '123456',
+          hashedPassword,
           newUser.pin || '0000',
           newUser.active !== false ? 1 : 0,
           newUser.createdAt || new Date().toISOString()
@@ -1116,7 +1157,11 @@ app.put("/api/users/:id", async (req, res) => {
   const { id } = req.params;
   const updatedData = req.body;
 
-  const currentList = readJSON(USERS_FILE, DEFAULT_USERS);
+  const isHashed = /^[a-f0-9]{64}$/i.test(updatedData.password || "");
+  const finalPassword = isHashed ? updatedData.password : hashPassword(updatedData.password || "123456");
+  updatedData.password = finalPassword;
+
+  const currentList = readJSON(USERS_FILE, []);
   const updatedList = currentList.map((u: any) => (u.id === id ? { ...u, ...updatedData } : u));
   writeJSON(USERS_FILE, updatedList);
 
@@ -1129,7 +1174,7 @@ app.put("/api/users/:id", async (req, res) => {
           updatedData.username,
           updatedData.email || null,
           updatedData.role || 'operator',
-          updatedData.password || '123456',
+          finalPassword,
           updatedData.pin || '0000',
           updatedData.active !== false ? 1 : 0,
           id

@@ -93,15 +93,29 @@ export default function LoginPage({ company, users, onLoginSuccess }: LoginPageP
       return;
     }
 
-    // Check password or fallback pin
-    const matchPassword = matchUser.password 
-      ? matchUser.password === password 
-      : (matchUser.pin === password || password === '1234' || password === '@Tecnico789' || password === 'admin123' || password === 'caixa123');
+    // Check password only (no PIN option)
+    let matchPassword = false;
+    const isSha256 = /^[a-f0-9]{64}$/i.test(matchUser.password || '');
+    
+    if (isSha256) {
+      try {
+        const msgBuffer = new TextEncoder().encode(password);
+        const hashBuffer = await window.crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        matchPassword = (hashHex === matchUser.password);
+      } catch (cryptoErr) {
+        console.error('Client-side cryptography failed:', cryptoErr);
+        matchPassword = (matchUser.password === password);
+      }
+    } else {
+      matchPassword = (matchUser.password === password);
+    }
 
     if (matchPassword) {
       onLoginSuccess(matchUser);
     } else {
-      setErrorMsg('Senha ou PIN incorreto.');
+      setErrorMsg('Senha incorreta.');
     }
 
     setIsLoading(false);
@@ -189,7 +203,7 @@ export default function LoginPage({ company, users, onLoginSuccess }: LoginPageP
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">
-                  Senha / PIN *
+                  Senha de Acesso *
                 </label>
               </div>
               <div className="relative">

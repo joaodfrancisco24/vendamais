@@ -45,6 +45,8 @@ export default function UserManagement({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [showPins, setShowPins] = useState<{ [key: string]: boolean }>({});
+  const [deleteConfirmUser, setDeleteConfirmUser] = useState<AppUser | null>(null);
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
   
   // Form State
   const [form, setForm] = useState({
@@ -169,18 +171,23 @@ export default function UserManagement({
 
   const handleDelete = (user: AppUser) => {
     if (user.id === currentUser.id) {
-      alert('Não pode eliminar o utilizador que está atualmente com sessão iniciada.');
+      setAlertMessage('Não pode eliminar o utilizador que está atualmente com sessão iniciada.');
       return;
     }
 
     if (user.role === 'admin' && adminCount <= 1) {
-      alert('Não é possível eliminar o único Administrador do sistema.');
+      setAlertMessage('Não é possível eliminar o único Administrador do sistema.');
       return;
     }
 
-    if (confirm(`Tem certeza que deseja eliminar o utilizador "${user.name}" (@${user.username})?`)) {
-      onDeleteUser(user.id);
-      setSuccessMsg(`Utilizador "${user.name}" eliminado.`);
+    setDeleteConfirmUser(user);
+  };
+
+  const handleConfirmDelete = () => {
+    if (deleteConfirmUser) {
+      onDeleteUser(deleteConfirmUser.id);
+      setSuccessMsg(`Utilizador "${deleteConfirmUser.name}" eliminado com sucesso.`);
+      setDeleteConfirmUser(null);
       setTimeout(() => setSuccessMsg(null), 3000);
     }
   };
@@ -683,6 +690,71 @@ export default function UserManagement({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE CONFIRMATION MODAL */}
+      {deleteConfirmUser && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-md w-full border border-slate-200 shadow-2xl overflow-hidden p-6 space-y-4 animate-scaleIn">
+            <div className="flex items-center gap-3 text-rose-600">
+              <div className="p-2.5 bg-rose-50 rounded-2xl border border-rose-100">
+                <ShieldAlert className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-black text-sm text-slate-900">Eliminar Utilizador</h3>
+                <p className="text-xs text-slate-500 font-medium">Esta ação é irreversível</p>
+              </div>
+            </div>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Tem a certeza de que deseja eliminar o utilizador <strong className="text-slate-900">{deleteConfirmUser.name}</strong> (@{deleteConfirmUser.username}) do sistema?
+            </p>
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmUser(null)}
+                className="flex-1 py-2.5 border border-slate-200 text-slate-700 font-bold text-xs rounded-xl hover:bg-slate-50 transition cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl transition shadow-md cursor-pointer"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ALERT MODAL */}
+      {alertMessage && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-md w-full border border-slate-200 shadow-2xl overflow-hidden p-6 space-y-4 animate-scaleIn">
+            <div className="flex items-center gap-3 text-amber-600">
+              <div className="p-2.5 bg-amber-50 rounded-2xl border border-amber-100">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-black text-sm text-slate-900">Aviso do Sistema</h3>
+                <p className="text-xs text-slate-500 font-medium">Ação Restringida</p>
+              </div>
+            </div>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              {alertMessage}
+            </p>
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setAlertMessage(null)}
+                className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition shadow-md cursor-pointer text-center"
+              >
+                Compreendi
+              </button>
+            </div>
           </div>
         </div>
       )}

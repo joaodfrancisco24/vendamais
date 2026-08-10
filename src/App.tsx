@@ -251,6 +251,8 @@ export default function App() {
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
   const [isQuickCustomerOpen, setIsQuickCustomerOpen] = useState<boolean>(false);
   const [isGuiasExpanded, setIsGuiasExpanded] = useState<boolean>(false);
+  const [isConfigExpanded, setIsConfigExpanded] = useState<boolean>(false);
+  const [isRelatoriosExpanded, setIsRelatoriosExpanded] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<string>('');
 
   // Users & Roles State
@@ -676,6 +678,12 @@ export default function App() {
     }
 
     setActiveTab(tab);
+    if (['operacoes', 'users', 'config'].includes(tab)) {
+      setIsConfigExpanded(true);
+    }
+    if (['relatorios', 'pagamentos', 'turnos'].includes(tab)) {
+      setIsRelatoriosExpanded(true);
+    }
     if (window.innerWidth < 1024) {
       setIsSidebarOpen(false);
     }
@@ -690,6 +698,12 @@ export default function App() {
     if (isValid) {
       if (restrictedModalTab) {
         setActiveTab(restrictedModalTab);
+        if (['operacoes', 'users', 'config'].includes(restrictedModalTab)) {
+          setIsConfigExpanded(true);
+        }
+        if (['relatorios', 'pagamentos', 'turnos'].includes(restrictedModalTab)) {
+          setIsRelatoriosExpanded(true);
+        }
         setRestrictedModalTab(null);
       }
       setAdminPinInput('');
@@ -1088,23 +1102,6 @@ export default function App() {
                 </div>
               </button>
 
-              {/* Operações Gerais */}
-              <button
-                id="nav-btn-operacoes"
-                onClick={() => handleNavigateWithPermission('operacoes')}
-                className={`w-full py-2 px-3 rounded-lg text-xs transition flex items-center justify-between ${
-                  activeTab === 'operacoes'
-                    ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
-                    : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
-                }`}
-                title="OPERAÇÕES GERAIS"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Activity className={`w-4 h-4 ${activeTab === 'operacoes' ? 'text-brand' : 'text-slate-400'}`} />
-                  {!isCollapsed && <span>OPERAÇÕES GERAIS</span>}
-                </div>
-              </button>
-
               {/* GUIAS Section (Expandable) */}
               <div className="space-y-1">
                 <button
@@ -1145,7 +1142,6 @@ export default function App() {
                       title="GUIA DE REMESSA"
                     >
                       <div className="flex items-center gap-2">
-                        <span className="text-slate-500 font-mono">--</span>
                         <span>GUIA DE REMESSA</span>
                       </div>
                     </button>
@@ -1162,7 +1158,6 @@ export default function App() {
                       title="GUIA DE TRANSPORTE"
                     >
                       <div className="flex items-center gap-2">
-                        <span className="text-slate-500 font-mono">--</span>
                         <span>GUIA DE TRANSPORTE</span>
                       </div>
                     </button>
@@ -1283,60 +1278,87 @@ export default function App() {
                 </button>
               )}
 
-              {/* Relatórios Financeiros (Admin only) */}
-              {currentUser.role === 'admin' && (
+              {/* RELATÓRIOS FINANCEIROS Section (Expandable) */}
+              <div className="space-y-1">
                 <button
-                  id="nav-btn-relatorios"
-                  onClick={() => handleNavigateWithPermission('relatorios')}
+                  id="nav-btn-relatorios-group"
+                  onClick={() => setIsRelatoriosExpanded(!isRelatoriosExpanded)}
                   className={`w-full py-2 px-3 rounded-lg text-xs transition flex items-center justify-between ${
-                    activeTab === 'relatorios'
-                      ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
+                    ['relatorios', 'pagamentos', 'turnos'].includes(activeTab)
+                      ? 'bg-slate-800/30 text-white font-bold'
                       : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
                   }`}
                   title="RELATÓRIOS FINANCEIROS"
                 >
                   <div className="flex items-center gap-2.5">
-                    <TrendingUp className={`w-4 h-4 ${activeTab === 'relatorios' ? 'text-brand' : 'text-slate-400'}`} />
+                    <TrendingUp className={`w-4 h-4 ${['relatorios', 'pagamentos', 'turnos'].includes(activeTab) ? 'text-brand' : 'text-slate-400'}`} />
                     {!isCollapsed && <span>RELATÓRIOS FINANCEIROS</span>}
                   </div>
+                  {!isCollapsed && (
+                    isRelatoriosExpanded ? (
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    ) : (
+                      <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    )
+                  )}
                 </button>
-              )}
 
-              {/* Saídas / Pagamentos (Admin only) */}
-              {currentUser.role === 'admin' && (
-                <button
-                  id="nav-btn-pagamentos"
-                  onClick={() => handleNavigateWithPermission('pagamentos')}
-                  className={`w-full py-2 px-3 rounded-lg text-xs transition flex items-center justify-between ${
-                    activeTab === 'pagamentos'
-                      ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
-                      : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
-                  }`}
-                  title="SAÍDAS / PAGAMENTOS"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Coins className={`w-4 h-4 ${activeTab === 'pagamentos' ? 'text-brand' : 'text-slate-400'}`} />
-                    {!isCollapsed && <span>SAÍDAS / PAGAMENTOS</span>}
+                {isRelatoriosExpanded && (
+                  <div className={`${!isCollapsed ? 'pl-4' : 'pl-0'} mt-1 space-y-1`}>
+                    {/* Relatórios Financeiros */}
+                    {currentUser.role === 'admin' && (
+                      <button
+                        id="nav-btn-relatorios"
+                        onClick={() => handleNavigateWithPermission('relatorios')}
+                        className={`w-full py-1.5 px-3 rounded-lg text-[11px] transition flex items-center justify-between ${
+                          activeTab === 'relatorios'
+                            ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
+                            : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
+                        }`}
+                        title="RELATÓRIOS FINANCEIROS"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span>RELATÓRIOS FINANCEIROS</span>
+                        </div>
+                      </button>
+                    )}
+
+                    {/* Saídas / Pagamentos */}
+                    {currentUser.role === 'admin' && (
+                      <button
+                        id="nav-btn-pagamentos"
+                        onClick={() => handleNavigateWithPermission('pagamentos')}
+                        className={`w-full py-1.5 px-3 rounded-lg text-[11px] transition flex items-center justify-between ${
+                          activeTab === 'pagamentos'
+                            ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
+                            : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
+                        }`}
+                        title="SAÍDAS / PAGAMENTOS"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span>SAÍDAS / PAGAMENTOS</span>
+                        </div>
+                      </button>
+                    )}
+
+                    {/* Gestão de Turnos */}
+                    <button
+                      id="nav-btn-turnos"
+                      onClick={() => handleNavigateWithPermission('turnos')}
+                      className={`w-full py-1.5 px-3 rounded-lg text-[11px] transition flex items-center justify-between ${
+                        activeTab === 'turnos'
+                          ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
+                          : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
+                      }`}
+                      title="GESTÃO DE TURNOS"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span>GESTÃO DE TURNOS</span>
+                      </div>
+                    </button>
                   </div>
-                </button>
-              )}
-
-              {/* Gestão de Turnos */}
-              <button
-                id="nav-btn-turnos"
-                onClick={() => handleNavigateWithPermission('turnos')}
-                className={`w-full py-2 px-3 rounded-lg text-xs transition flex items-center justify-between ${
-                  activeTab === 'turnos'
-                    ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
-                    : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
-                }`}
-                title="GESTÃO DE TURNOS"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Clock className={`w-4 h-4 ${activeTab === 'turnos' ? 'text-brand' : 'text-slate-400'}`} />
-                  {!isCollapsed && <span>GESTÃO DE TURNOS</span>}
-                </div>
-              </button>
+                )}
+              </div>
             </div>
 
             {/* SECTION 5: CLIENTES */}
@@ -1361,45 +1383,80 @@ export default function App() {
             {/* SECTION 6: CONFIGURAÇÕES E ACESSOS (Admin Only) */}
             {currentUser.role === 'admin' && (
               <div className="space-y-1">
-                {!isCollapsed ? (
-                  <span className="text-[9px] font-black text-slate-400 px-3 uppercase tracking-widest block mb-1">
-                    CONFIGURAÇÕES & ACESSOS
-                  </span>
-                ) : (
-                  <div className="border-t border-slate-800 my-1.5" />
+                <button
+                  id="nav-btn-config-group"
+                  onClick={() => setIsConfigExpanded(!isConfigExpanded)}
+                  className={`w-full py-2 px-3 rounded-lg text-xs transition flex items-center justify-between ${
+                    ['operacoes', 'users', 'config'].includes(activeTab)
+                      ? 'bg-slate-800/30 text-white font-bold'
+                      : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
+                  }`}
+                  title="CONFIGURAÇÕES & ACESSOS"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Lock className={`w-4 h-4 ${['operacoes', 'users', 'config'].includes(activeTab) ? 'text-brand' : 'text-slate-400'}`} />
+                    {!isCollapsed && <span>CONFIGURAÇÕES & ACESSOS</span>}
+                  </div>
+                  {!isCollapsed && (
+                    isConfigExpanded ? (
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    ) : (
+                      <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    )
+                  )}
+                </button>
+
+                {isConfigExpanded && (
+                  <div className={`${!isCollapsed ? 'pl-4' : 'pl-0'} mt-1 space-y-1`}>
+                    {/* Operações Gerais */}
+                    <button
+                      id="nav-btn-operacoes"
+                      onClick={() => handleNavigateWithPermission('operacoes')}
+                      className={`w-full py-1.5 px-3 rounded-lg text-[11px] transition flex items-center justify-between ${
+                        activeTab === 'operacoes'
+                          ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
+                          : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
+                      }`}
+                      title="OPERAÇÕES GERAIS"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span>OPERAÇÕES GERAIS</span>
+                      </div>
+                    </button>
+
+                    {/* Utilizadores & Perfis */}
+                    <button
+                      id="nav-btn-users"
+                      onClick={() => handleNavigateWithPermission('users')}
+                      className={`w-full py-1.5 px-3 rounded-lg text-[11px] transition flex items-center justify-between ${
+                        activeTab === 'users'
+                          ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
+                          : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
+                      }`}
+                      title="UTILIZADORES & ACESSOS"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span>UTILIZADORES & PERFIS</span>
+                      </div>
+                    </button>
+
+                    {/* Configurações Gerais */}
+                    <button
+                      id="nav-btn-config"
+                      onClick={() => handleNavigateWithPermission('config')}
+                      className={`w-full py-1.5 px-3 rounded-lg text-[11px] transition flex items-center justify-between ${
+                        activeTab === 'config'
+                          ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
+                          : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
+                      }`}
+                      title="CONFIGURAÇÕES"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span>CONFIGURAÇÕES GERAIS</span>
+                      </div>
+                    </button>
+                  </div>
                 )}
-
-                <button
-                  id="nav-btn-users"
-                  onClick={() => handleNavigateWithPermission('users')}
-                  className={`w-full py-2 px-3 rounded-lg text-xs transition flex items-center justify-between ${
-                    activeTab === 'users'
-                      ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
-                      : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
-                  }`}
-                  title="UTILIZADORES & ACESSOS"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Users className={`w-4 h-4 ${activeTab === 'users' ? 'text-brand' : 'text-slate-400'}`} />
-                    {!isCollapsed && <span>UTILIZADORES & PERFIS</span>}
-                  </div>
-                </button>
-
-                <button
-                  id="nav-btn-config"
-                  onClick={() => handleNavigateWithPermission('config')}
-                  className={`w-full py-2 px-3 rounded-lg text-xs transition flex items-center justify-between ${
-                    activeTab === 'config'
-                      ? 'bg-[#10141d] border-r-4 border-brand text-white font-black shadow-2xs'
-                      : 'text-slate-400 hover:bg-slate-800/50 hover:text-white font-bold'
-                  }`}
-                  title="CONFIGURAÇÕES"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Settings className={`w-4 h-4 ${activeTab === 'config' ? 'text-brand' : 'text-slate-400'}`} />
-                    {!isCollapsed && <span>CONFIGURAÇÕES GERAIS</span>}
-                  </div>
-                </button>
               </div>
             )}
 

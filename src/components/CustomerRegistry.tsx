@@ -36,6 +36,7 @@ export default function CustomerRegistry({
   const [name, setName] = useState('');
   const [nif, setNif] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
 
   const openNewForm = () => {
@@ -43,6 +44,7 @@ export default function CustomerRegistry({
     setName('');
     setNif('');
     setEmail('');
+    setPhone('');
     setAddress('');
     setIsFormOpen(true);
   };
@@ -52,6 +54,7 @@ export default function CustomerRegistry({
     setName(cust.name);
     setNif(cust.nif);
     setEmail(cust.email || '');
+    setPhone(cust.phone || '');
     setAddress(cust.address || '');
     setIsFormOpen(true);
   };
@@ -73,6 +76,7 @@ export default function CustomerRegistry({
       name,
       nif: nif.trim(),
       email: email || undefined,
+      phone: phone || undefined,
       address: address || undefined
     };
 
@@ -193,6 +197,19 @@ export default function CustomerRegistry({
               />
             </div>
 
+            {/* Phone */}
+            <div>
+              <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Contacto Telefónico</label>
+              <input 
+                type="text"
+                id="cust-phone-input"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="Ex: 923456789"
+                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:bg-white"
+              />
+            </div>
+
             {/* Address */}
             <div>
               <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Endereço Residencial / Comercial</label>
@@ -251,6 +268,7 @@ export default function CustomerRegistry({
                 <tr className="bg-gray-50 border-b border-gray-200 text-gray-400 font-bold uppercase tracking-wider">
                   <th className="p-4">NIF</th>
                   <th className="p-4">Nome do Cliente</th>
+                  <th className="p-4">Contacto</th>
                   <th className="p-4">E-mail</th>
                   <th className="p-4">Endereço</th>
                   <th className="p-4 text-center no-print">Ações</th>
@@ -261,6 +279,7 @@ export default function CustomerRegistry({
                   <tr key={c.id} className="hover:bg-gray-50/50 transition">
                     <td className="p-4 font-mono font-bold text-gray-900">{c.nif}</td>
                     <td className="p-4 font-bold text-gray-800">{c.name}</td>
+                    <td className="p-4 text-gray-500 font-mono">{c.phone || '—'}</td>
                     <td className="p-4 text-gray-500 font-mono">{c.email || '—'}</td>
                     <td className="p-4 text-gray-500">{c.address || '—'}</td>
                     <td className="p-4 text-center no-print">

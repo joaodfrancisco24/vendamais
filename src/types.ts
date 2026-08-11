@@ -30,6 +30,7 @@ export interface Customer {
   name: string;
   nif: string; // Angolan Fiscal Identification Number (9 digits)
   email?: string;
+  phone?: string;
   address?: string;
 }
 

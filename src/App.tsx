@@ -1615,6 +1615,7 @@ export default function App() {
         {activeTab === 'products' && (
           <ProductRegistry 
             products={products}
+            company={company}
             onAddProduct={addProduct}
             onUpdateProduct={updateProduct}
             onDeleteProduct={deleteProduct}
@@ -1625,6 +1626,7 @@ export default function App() {
         {activeTab === 'customers' && (
           <CustomerRegistry 
             customers={customers}
+            company={company}
             onAddCustomer={addCustomer}
             onUpdateCustomer={updateCustomer}
             onDeleteCustomer={deleteCustomer}
@@ -1757,6 +1759,7 @@ export default function App() {
           <div className="bg-white rounded-3xl p-2 w-full max-w-lg shadow-2xl border border-gray-100">
             <CustomerRegistry 
               customers={customers}
+              company={company}
               onAddCustomer={addCustomer}
               onUpdateCustomer={updateCustomer}
               onDeleteCustomer={deleteCustomer}

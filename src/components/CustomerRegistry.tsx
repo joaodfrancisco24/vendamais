@@ -5,11 +5,12 @@
 
 import React, { useState } from 'react';
 import { Plus, Trash2, Edit, Check, Users, ArrowLeft, Printer } from 'lucide-react';
-import { Customer } from '../types';
+import { Customer, CompanyConfig } from '../types';
 import { printElement } from '../utils/print';
 
 interface CustomerRegistryProps {
   customers: Customer[];
+  company: CompanyConfig;
   onAddCustomer: (customer: Customer) => void;
   onUpdateCustomer: (customer: Customer) => void;
   onDeleteCustomer: (id: string) => void;
@@ -19,6 +20,7 @@ interface CustomerRegistryProps {
 
 export default function CustomerRegistry({
   customers,
+  company,
   onAddCustomer,
   onUpdateCustomer,
   onDeleteCustomer,
@@ -229,7 +231,20 @@ export default function CustomerRegistry({
         </form>
       ) : (
         /* MAIN LIST VIEW */
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden" id="printed-customer-list">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden p-6 print:p-8" id="printed-customer-list">
+          {/* PRINTER COMPANY HEADER (Visible only in print) */}
+          <div className="hidden print:block text-center space-y-1 pb-6 border-b border-slate-100 mb-6">
+            <h1 className="text-[26px] font-black text-[#0266b3] tracking-tight">
+              {company?.name || 'Sistema Negomil'}
+            </h1>
+            <p className="text-[10px] text-slate-500 font-semibold tracking-wide uppercase">
+              NIF: {company?.nif || '999999999'} {company?.address && `| ${company.address}`} {company?.city && `| ${company.city}`} {company?.phone && `| Tel: ${company.phone}`} {company?.email && `| Email: ${company.email}`}
+            </p>
+            <h2 className="text-xs font-black text-slate-600 tracking-widest uppercase mt-3 pt-2 border-t border-slate-100">
+              LISTA GERAL DE CLIENTES
+            </h2>
+          </div>
+
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
@@ -238,7 +253,7 @@ export default function CustomerRegistry({
                   <th className="p-4">Nome do Cliente</th>
                   <th className="p-4">E-mail</th>
                   <th className="p-4">Endereço</th>
-                  <th className="p-4 text-center">Ações</th>
+                  <th className="p-4 text-center no-print">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -248,7 +263,7 @@ export default function CustomerRegistry({
                     <td className="p-4 font-bold text-gray-800">{c.name}</td>
                     <td className="p-4 text-gray-500 font-mono">{c.email || '—'}</td>
                     <td className="p-4 text-gray-500">{c.address || '—'}</td>
-                    <td className="p-4 text-center">
+                    <td className="p-4 text-center no-print">
                       {c.nif === '999999999' ? (
                         <span className="text-[10px] text-gray-400 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded font-bold">
                           PADRÃO
@@ -278,6 +293,11 @@ export default function CustomerRegistry({
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Document print centered signature/info block */}
+          <div className="hidden print:block text-center text-[10px] text-slate-400 font-medium pt-8 border-t border-slate-100 mt-12">
+            Documento gerado em {new Date().toLocaleDateString('pt-PT')} {new Date().toLocaleTimeString('pt-PT', {hour: '2-digit', minute:'2-digit'})} | {company?.name || 'Sistema Negomil'}
           </div>
         </div>
       )}

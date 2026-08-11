@@ -18,11 +18,12 @@ import {
   Printer,
   Warehouse
 } from 'lucide-react';
-import { Product } from '../types';
+import { Product, CompanyConfig } from '../types';
 import { printElement } from '../utils/print';
 
 interface ProductRegistryProps {
   products: Product[];
+  company: CompanyConfig;
   onAddProduct: (product: Product) => void;
   onUpdateProduct: (product: Product) => void;
   onDeleteProduct: (id: string) => void;
@@ -31,6 +32,7 @@ interface ProductRegistryProps {
 
 export default function ProductRegistry({
   products,
+  company,
   onAddProduct,
   onUpdateProduct,
   onDeleteProduct,
@@ -681,8 +683,21 @@ export default function ProductRegistry({
         </form>
       ) : (
         /* 2. MAIN INVENTORY TABLE VIEW */
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden" id="printed-inventory-list">
-          <div className="p-4 border-b border-gray-50 bg-gray-50/50">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden p-6 print:p-8" id="printed-inventory-list">
+          {/* PRINTER COMPANY HEADER (Visible only in print) */}
+          <div className="hidden print:block text-center space-y-1 pb-6 border-b border-slate-100 mb-6">
+            <h1 className="text-[26px] font-black text-[#0266b3] tracking-tight">
+              {company?.name || 'Sistema Negomil'}
+            </h1>
+            <p className="text-[10px] text-slate-500 font-semibold tracking-wide uppercase">
+              NIF: {company?.nif || '999999999'} {company?.address && `| ${company.address}`} {company?.city && `| ${company.city}`} {company?.phone && `| Tel: ${company.phone}`} {company?.email && `| Email: ${company.email}`}
+            </p>
+            <h2 className="text-xs font-black text-slate-600 tracking-widest uppercase mt-3 pt-2 border-t border-slate-100">
+              INVENTÁRIO GERAL DE PRODUTOS E ARTIGOS
+            </h2>
+          </div>
+
+          <div className="p-4 border-b border-gray-50 bg-gray-50/50 print:hidden">
             <span className="text-xs text-gray-500 font-bold uppercase tracking-wider">Lista de Artigos Registrados ({products.length})</span>
           </div>
 
@@ -697,7 +712,7 @@ export default function ProductRegistry({
                   <th className="p-4 text-right">Preço de Venda</th>
                   <th className="p-4 text-center">Imposto</th>
                   <th className="p-4 text-center">Disponível</th>
-                  <th className="p-4 text-center">Ações</th>
+                  <th className="p-4 text-center no-print">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -757,7 +772,7 @@ export default function ProductRegistry({
                         </span>
                       )}
                     </td>
-                    <td className="p-4 text-center">
+                    <td className="p-4 text-center no-print">
                       <div className="flex items-center justify-center gap-2">
                         <button
                           id={`btn-edit-prod-${p.code}`}
@@ -785,6 +800,11 @@ export default function ProductRegistry({
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Document print centered signature/info block */}
+          <div className="hidden print:block text-center text-[10px] text-slate-400 font-medium pt-8 border-t border-slate-100 mt-12">
+            Documento gerado em {new Date().toLocaleDateString('pt-PT')} {new Date().toLocaleTimeString('pt-PT', {hour: '2-digit', minute:'2-digit'})} | {company?.name || 'Sistema Negomil'}
           </div>
         </div>
       )}

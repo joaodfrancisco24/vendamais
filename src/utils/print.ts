@@ -2,7 +2,7 @@
  * Utility to print a specific DOM element cleanly by creating a temporary iframe.
  * This is perfect for sandboxed iframe environments and prints only the targeted element (e.g. receipt).
  */
-export function printElement(elementId: string, maxWidth: string = '360px') {
+export function printElement(elementId: string, maxWidth: string = '360px', landscape: boolean = false) {
   const element = document.getElementById(elementId);
   if (!element) {
     console.error(`Element with id "${elementId}" not found for printing.`);
@@ -44,6 +44,9 @@ export function printElement(elementId: string, maxWidth: string = '360px') {
         ${styles}
         <style>
           @media print {
+            @page {
+              size: ${landscape ? 'landscape' : 'auto'};
+            }
             body {
               margin: 0;
               padding: 0;

@@ -392,7 +392,7 @@ export default function FinancialReports({ invoices, products, customers, compan
           <div className="flex justify-end items-center gap-3">
             <button
               id={`btn-print-${selectedReport}`}
-              onClick={() => printElement(`printed-${selectedReport}`, '1000px')}
+              onClick={() => printElement(`printed-${selectedReport}`, '1000px', selectedReport === 'lucros-produto')}
               className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition flex items-center gap-2 shadow-sm shrink-0"
             >
               <Printer className="w-4 h-4" />

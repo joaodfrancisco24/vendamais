@@ -1655,6 +1655,7 @@ export default function App() {
             invoices={invoices}
             products={products}
             customers={customers}
+            company={company}
             onNavigate={(tab) => handleNavigateWithPermission(tab)}
           />
         )}

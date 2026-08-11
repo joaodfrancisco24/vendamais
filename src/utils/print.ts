@@ -49,6 +49,9 @@ export function printElement(elementId: string, maxWidth: string = '360px') {
               padding: 0;
               background: white;
             }
+            .no-print {
+              display: none !important;
+            }
           }
           body {
             background: white;
@@ -59,7 +62,7 @@ export function printElement(elementId: string, maxWidth: string = '360px') {
             print-color-adjust: exact;
           }
           /* Custom styles to optimize receipt or full-page formatting */
-          #printed-receipt-view, #printed-invoice-a4, #printed-delivery-guide, #printed-z-report, #printed-financial-report, #printed-inventory-list, #printed-customer-list {
+          #printed-receipt-view, #printed-invoice-a4, #printed-delivery-guide, #printed-z-report, #printed-financial-report, #printed-inventory-list, #printed-customer-list, [id^="printed-"] {
             border: none !important;
             box-shadow: none !important;
             padding: 0 !important;

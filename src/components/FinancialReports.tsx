@@ -24,19 +24,20 @@ import {
   Clock,
   Briefcase
 } from 'lucide-react';
-import { Invoice, Product, Customer } from '../types';
+import { Invoice, Product, Customer, CompanyConfig } from '../types';
 import { printElement } from '../utils/print';
 
 interface FinancialReportsProps {
   invoices: Invoice[];
   products: Product[];
   customers: Customer[];
+  company: CompanyConfig;
   onNavigate: (tab: string) => void;
 }
 
 type ReportType = 'vendas-mensais' | 'lucros-produto' | 'vendas-usuario' | 'mapa-iva' | 'imposto-selo' | 'conta-corrente';
 
-export default function FinancialReports({ invoices, products, customers, onNavigate }: FinancialReportsProps) {
+export default function FinancialReports({ invoices, products, customers, company, onNavigate }: FinancialReportsProps) {
   // Date states - Defaulting to July 31st 2026 to August 10th 2026 as shown in the user's image
   const [startDate, setStartDate] = useState<string>('2026-07-31');
   const [endDate, setEndDate] = useState<string>('2026-08-10');
@@ -405,24 +406,24 @@ export default function FinancialReports({ invoices, products, customers, onNavi
             className="bg-white p-8 rounded-3xl border border-slate-200/80 shadow-xs space-y-6"
           >
             {/* PRINTER COMPANY HEADER (Visible in print) */}
-            <div className="border-b border-slate-100 pb-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div>
-                <h2 className="text-xl font-black text-slate-900 tracking-tight">
-                  {selectedReport === 'vendas-mensais' && 'Relatório de Vendas Mensais'}
-                  {selectedReport === 'lucros-produto' && 'Relatório de Lucros por Produto'}
-                  {selectedReport === 'vendas-usuario' && 'Relatório de Desempenho de Vendas por Usuário'}
-                  {selectedReport === 'mapa-iva' && 'Relatório Fiscal - Mapa do IVA'}
-                  {selectedReport === 'imposto-selo' && 'Relatório de Imposto de Selo'}
-                  {selectedReport === 'conta-corrente' && 'Extrato de Conta Corrente'}
-                </h2>
-                <p className="text-[11px] text-slate-500 font-medium">
-                  Período: <span className="font-mono font-bold text-slate-800">{startDate.split('-').reverse().join('/')}</span> até <span className="font-mono font-bold text-slate-800">{endDate.split('-').reverse().join('/')}</span>
-                </p>
-              </div>
-              <div className="text-left sm:text-right">
-                <span className="text-[10px] font-black text-brand tracking-widest block uppercase">SISTEMA POS PRO</span>
-                <span className="text-[9px] text-slate-400 block mt-0.5">Emitido em {new Date().toLocaleString('pt-PT')}</span>
-              </div>
+            <div className="text-center space-y-1 pb-6 border-b border-slate-100">
+              <h1 className="text-[26px] font-black text-[#0266b3] tracking-tight">
+                {company.name}
+              </h1>
+              <p className="text-[10px] text-slate-500 font-semibold tracking-wide uppercase">
+                NIF: {company.nif} {company.address && `| ${company.address}`} {company.city && `| ${company.city}`} {company.phone && `| Tel: ${company.phone}`} {company.email && `| Email: ${company.email}`}
+              </p>
+              <h2 className="text-xs font-black text-slate-600 tracking-widest uppercase mt-3 pt-2 border-t border-slate-100">
+                {selectedReport === 'vendas-mensais' && 'RELATÓRIO DE VENDAS MENSAIS'}
+                {selectedReport === 'lucros-produto' && 'RELATÓRIO DE LUCROS POR PRODUTO'}
+                {selectedReport === 'vendas-usuario' && 'RELATÓRIO DE DESEMPENHO DE VENDAS POR USUÁRIO'}
+                {selectedReport === 'mapa-iva' && 'RELATÓRIO FISCAL - MAPA DO IVA'}
+                {selectedReport === 'imposto-selo' && 'RELATÓRIO DE IMPOSTO DE SELO'}
+                {selectedReport === 'conta-corrente' && 'EXTRATO DE CONTA CORRENTE'}
+              </h2>
+              <p className="text-xs text-slate-500 font-medium">
+                Período: {startDate.split('-').reverse().join('/')} a {endDate.split('-').reverse().join('/')}
+              </p>
             </div>
 
             {/* REPORT SPECIFIC CONTENT */}
@@ -482,6 +483,10 @@ export default function FinancialReports({ invoices, products, customers, onNavi
               />
             )}
 
+            {/* Shared Document print footer */}
+            <div className="text-center text-[10px] text-slate-400 font-medium pt-8 border-t border-slate-100 mt-12">
+              Documento gerado em {new Date().toLocaleDateString('pt-PT')} {new Date().toLocaleTimeString('pt-PT', {hour: '2-digit', minute:'2-digit'})} | {company.name}
+            </div>
           </div>
         </div>
       )}
@@ -499,10 +504,20 @@ interface ReportVendasMensaisProps {
   formatKz: (value: number) => string;
 }
 function ReportVendasMensais({ filteredInvoices, formatKz }: ReportVendasMensaisProps) {
+  // Helper to format raw numbers in Portuguese style without the currency suffix
+  const formatNum = (val: number) => {
+    return new Intl.NumberFormat('pt-AO', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(val);
+  };
+
   // Grouping by Month (YYYY-MM)
   const monthlyData: Record<string, { 
     monthName: string;
-    count: number;
+    documentos: number;
+    facturas: number;
+    creditos: number;
     subtotal: number;
     discount: number;
     tax: number;
@@ -520,15 +535,33 @@ function ReportVendasMensais({ filteredInvoices, formatKz }: ReportVendasMensais
     const year = inv.date.slice(0, 4);
     const month = inv.date.slice(5, 7);
     const key = `${year}-${month}`;
-    const name = `${monthNamesMap[month] || month} ${year}`;
+    const name = `${monthNamesMap[month] || month} / ${year}`;
     
     if (!monthlyData[key]) {
-      monthlyData[key] = { monthName: name, count: 0, subtotal: 0, discount: 0, tax: 0, total: 0 };
+      monthlyData[key] = { 
+        monthName: name, 
+        documentos: 0, 
+        facturas: 0, 
+        creditos: 0, 
+        subtotal: 0, 
+        discount: 0, 
+        tax: 0, 
+        total: 0 
+      };
     }
 
     const sign = inv.type === 'NC' ? -1 : 1;
-    monthlyData[key].count += 1;
-    monthlyData[key].subtotal += inv.subtotal * sign;
+    
+    // Total documents count
+    monthlyData[key].documentos += 1;
+    if (inv.type === 'NC') {
+      monthlyData[key].creditos += 1;
+    } else {
+      monthlyData[key].facturas += 1;
+    }
+
+    // Subtotal is the taxable baseline before tax (Total minus Tax)
+    monthlyData[key].subtotal += (inv.total - inv.taxTotal) * sign;
     monthlyData[key].discount += (inv.discountTotal || 0) * sign;
     monthlyData[key].tax += inv.taxTotal * sign;
     monthlyData[key].total += inv.total * sign;
@@ -540,12 +573,14 @@ function ReportVendasMensais({ filteredInvoices, formatKz }: ReportVendasMensais
   }));
 
   const grandTotals = monthsArray.reduce((acc, curr) => ({
-    count: acc.count + curr.count,
+    documentos: acc.documentos + curr.documentos,
+    facturas: acc.facturas + curr.facturas,
+    creditos: acc.creditos + curr.creditos,
     subtotal: acc.subtotal + curr.subtotal,
     discount: acc.discount + curr.discount,
     tax: acc.tax + curr.tax,
     total: acc.total + curr.total
-  }), { count: 0, subtotal: 0, discount: 0, tax: 0, total: 0 });
+  }), { documentos: 0, facturas: 0, creditos: 0, subtotal: 0, discount: 0, tax: 0, total: 0 });
 
   // Payment method totals
   let cashTotal = 0;
@@ -571,8 +606,8 @@ function ReportVendasMensais({ filteredInvoices, formatKz }: ReportVendasMensais
 
   return (
     <div className="space-y-6">
-      {/* Cards summaries */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* Cards summaries (On-screen helper cards, hidden in print) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 no-print">
         <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
           <span className="text-[9px] font-black text-slate-400 block uppercase tracking-wider">Faturação Total (Líquida)</span>
           <span className="text-lg font-black text-slate-900 font-mono mt-1 block">{formatKz(grandTotals.total)}</span>
@@ -583,42 +618,35 @@ function ReportVendasMensais({ filteredInvoices, formatKz }: ReportVendasMensais
         </div>
         <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
           <span className="text-[9px] font-black text-slate-400 block uppercase tracking-wider">Volume de Documentos</span>
-          <span className="text-lg font-black text-slate-900 font-mono mt-1 block">{grandTotals.count} un.</span>
+          <span className="text-lg font-black text-slate-900 font-mono mt-1 block">{grandTotals.documentos} un.</span>
         </div>
       </div>
 
-      {/* Main Table */}
-      <div className="overflow-hidden border border-slate-100 rounded-2xl text-xs">
+      {/* Main Table styled exactly like the provided user template */}
+      <div className="overflow-hidden border border-slate-200 rounded-lg text-xs bg-white shadow-xs">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 text-[10px] font-bold uppercase">
-              <th className="p-3">Mês / Ano</th>
-              <th className="p-3 text-center">N.º Doc.</th>
-              <th className="p-3 text-right">Subtotal</th>
-              <th className="p-3 text-right">Descontos</th>
-              <th className="p-3 text-right">IVA Liquidado</th>
-              <th className="p-3 text-right">Total Facturado</th>
-              <th className="p-3 text-right w-[150px]">Tendência</th>
+            <tr className="bg-[#0266b3] text-white text-[10px] font-bold uppercase tracking-wider">
+              <th className="p-3 py-2.5 font-bold text-left pl-4">MÊS</th>
+              <th className="p-3 py-2.5 font-bold text-center">DOCUMENTOS</th>
+              <th className="p-3 py-2.5 font-bold text-center">FACTURAS</th>
+              <th className="p-3 py-2.5 font-bold text-center">CRÉDITOS</th>
+              <th className="p-3 py-2.5 font-bold text-right pr-4">VALOR BASE</th>
+              <th className="p-3 py-2.5 font-bold text-right pr-4">IVA</th>
+              <th className="p-3 py-2.5 font-bold text-right pr-4">TOTAL GERAL</th>
             </tr>
           </thead>
           <tbody>
             {monthsArray.length > 0 ? (
               monthsArray.map((m, idx) => (
-                <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50/30">
-                  <td className="p-3 font-bold text-slate-800">{m.monthName}</td>
-                  <td className="p-3 text-center font-bold font-mono text-slate-500">{m.count}</td>
-                  <td className="p-3 text-right font-mono text-slate-600">{formatKz(m.subtotal)}</td>
-                  <td className="p-3 text-right font-mono text-red-500">-{formatKz(m.discount)}</td>
-                  <td className="p-3 text-right font-mono text-slate-600">{formatKz(m.tax)}</td>
-                  <td className="p-3 text-right font-mono font-black text-slate-900">{formatKz(m.total)}</td>
-                  <td className="p-3">
-                    <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                      <div 
-                        style={{ width: `${Math.max(0, (m.total / maxTotal) * 100)}%` }}
-                        className="h-full bg-brand rounded-full"
-                      />
-                    </div>
-                  </td>
+                <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50/40 text-slate-700">
+                  <td className="p-3 pl-4 font-semibold text-slate-800">{m.monthName}</td>
+                  <td className="p-3 text-center font-bold font-mono">{m.documentos}</td>
+                  <td className="p-3 text-center font-semibold font-mono text-slate-600">{m.facturas}</td>
+                  <td className="p-3 text-center font-semibold font-mono text-slate-600">{m.creditos}</td>
+                  <td className="p-3 text-right pr-4 font-mono">{formatNum(m.subtotal)}</td>
+                  <td className="p-3 text-right pr-4 font-mono">{formatNum(m.tax)}</td>
+                  <td className="p-3 text-right pr-4 font-mono font-bold text-slate-900">{formatNum(m.total)}</td>
                 </tr>
               ))
             ) : (
@@ -629,21 +657,21 @@ function ReportVendasMensais({ filteredInvoices, formatKz }: ReportVendasMensais
               </tr>
             )}
             {/* Grand Totals */}
-            <tr className="bg-slate-50/50 font-black text-slate-900">
-              <td className="p-3 text-xs uppercase">TOTAIS ACUMULADOS</td>
-              <td className="p-3 text-center font-mono">{grandTotals.count}</td>
-              <td className="p-3 text-right font-mono">{formatKz(grandTotals.subtotal)}</td>
-              <td className="p-3 text-right font-mono text-red-600">-{formatKz(grandTotals.discount)}</td>
-              <td className="p-3 text-right font-mono text-emerald-600">{formatKz(grandTotals.tax)}</td>
-              <td className="p-3 text-right font-mono text-slate-950 bg-slate-50">{formatKz(grandTotals.total)}</td>
-              <td className="p-3"></td>
+            <tr className="bg-[#f0f7fc] font-black text-slate-900 border-t border-slate-300">
+              <td className="p-3 pl-4 text-xs font-black uppercase">TOTAIS</td>
+              <td className="p-3 text-center font-mono font-black">{grandTotals.documentos}</td>
+              <td className="p-3 text-center font-mono font-black">{grandTotals.facturas}</td>
+              <td className="p-3 text-center font-mono font-black">{grandTotals.creditos}</td>
+              <td className="p-3 text-right pr-4 font-mono font-black">{formatNum(grandTotals.subtotal)}</td>
+              <td className="p-3 text-right pr-4 font-mono font-black">{formatNum(grandTotals.tax)}</td>
+              <td className="p-3 text-right pr-4 font-mono font-black text-slate-950">{formatNum(grandTotals.total)}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      {/* Payment methods breakdown */}
-      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 space-y-4">
+      {/* Payment methods breakdown (no-print) */}
+      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 space-y-4 no-print">
         <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
           <PieChart className="w-4 h-4 text-slate-600" />
           Distribuição dos Meios de Pagamento
@@ -786,36 +814,36 @@ function ReportLucrosProduto({ filteredInvoices, products, formatKz }: ReportLuc
       </div>
 
       {/* Products list table */}
-      <div className="overflow-hidden border border-slate-100 rounded-2xl text-xs">
+      <div className="overflow-hidden border border-slate-200 rounded-lg text-xs bg-white shadow-xs">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 text-[10px] font-bold uppercase">
-              <th className="p-3">Ref/Cód</th>
-              <th className="p-3">Designação do Artigo</th>
-              <th className="p-3 text-center">Unidades</th>
-              <th className="p-3 text-right">Custo Unit.</th>
-              <th className="p-3 text-right">Preço Médio</th>
-              <th className="p-3 text-right">Vendas Brutas</th>
-              <th className="p-3 text-right">Custo Merc.</th>
-              <th className="p-3 text-right">Lucro Bruto</th>
-              <th className="p-3 text-right">Margem %</th>
+            <tr className="bg-[#0266b3] text-white text-[10px] font-bold uppercase tracking-wider">
+              <th className="p-3 py-2.5 font-bold text-left pl-4">Ref/Cód</th>
+              <th className="p-3 py-2.5 font-bold text-left">Designação do Artigo</th>
+              <th className="p-3 py-2.5 font-bold text-center">Unidades</th>
+              <th className="p-3 py-2.5 font-bold text-right pr-4">Custo Unit.</th>
+              <th className="p-3 py-2.5 font-bold text-right pr-4">Preço Médio</th>
+              <th className="p-3 py-2.5 font-bold text-right pr-4">Vendas Brutas</th>
+              <th className="p-3 py-2.5 font-bold text-right pr-4">Custo Merc.</th>
+              <th className="p-3 py-2.5 font-bold text-right pr-4">Lucro Bruto</th>
+              <th className="p-3 py-2.5 font-bold text-right pr-4">Margem %</th>
             </tr>
           </thead>
           <tbody>
             {productsArray.length > 0 ? (
               productsArray.map((p, idx) => (
-                <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50/30">
-                  <td className="p-3 font-mono font-bold text-slate-400">{p.code}</td>
-                  <td className="p-3 font-bold text-slate-800">{p.name}</td>
+                <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50/40 text-slate-700">
+                  <td className="p-3 pl-4 font-mono font-bold text-slate-400">{p.code}</td>
+                  <td className="p-3 font-semibold text-slate-800">{p.name}</td>
                   <td className="p-3 text-center font-bold font-mono text-slate-600">{p.qty}</td>
-                  <td className="p-3 text-right font-mono text-slate-500">{formatKz(p.buyPrice)}</td>
-                  <td className="p-3 text-right font-mono text-slate-500">{formatKz(p.sellPriceAvg)}</td>
-                  <td className="p-3 text-right font-mono text-slate-600">{formatKz(p.revenue)}</td>
-                  <td className="p-3 text-right font-mono text-slate-600">{formatKz(p.cost)}</td>
-                  <td className={`p-3 text-right font-mono font-bold ${p.profit >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                    {formatKz(p.profit)}
+                  <td className="p-3 text-right pr-4 font-mono">{new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(p.buyPrice)}</td>
+                  <td className="p-3 text-right pr-4 font-mono">{new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(p.sellPriceAvg)}</td>
+                  <td className="p-3 text-right pr-4 font-mono">{new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(p.revenue)}</td>
+                  <td className="p-3 text-right pr-4 font-mono">{new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(p.cost)}</td>
+                  <td className={`p-3 text-right pr-4 font-mono font-bold ${p.profit >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                    {new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(p.profit)}
                   </td>
-                  <td className="p-3 text-right font-bold font-mono">
+                  <td className="p-3 text-right pr-4 font-bold font-mono">
                     <span className={`px-2 py-0.5 rounded-full text-[10px] ${
                       p.margin > 30 ? 'bg-emerald-50 text-emerald-700' : p.margin > 15 ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-700'
                     }`}>
@@ -832,15 +860,15 @@ function ReportLucrosProduto({ filteredInvoices, products, formatKz }: ReportLuc
               </tr>
             )}
             {/* Grand Totals */}
-            <tr className="bg-slate-50/50 font-black text-slate-900">
-              <td colSpan={2} className="p-3 text-xs uppercase">TOTAIS DE DESEMPENHO</td>
-              <td className="p-3 text-center font-mono">{grandTotals.qty}</td>
+            <tr className="bg-[#f0f7fc] font-black text-slate-900 border-t border-slate-300">
+              <td colSpan={2} className="p-3 pl-4 text-xs font-black uppercase">TOTAIS DE DESEMPENHO</td>
+              <td className="p-3 text-center font-mono font-black">{grandTotals.qty}</td>
               <td className="p-3"></td>
               <td className="p-3"></td>
-              <td className="p-3 text-right font-mono">{formatKz(grandTotals.revenue)}</td>
-              <td className="p-3 text-right font-mono text-slate-500">{formatKz(grandTotals.cost)}</td>
-              <td className="p-3 text-right font-mono text-emerald-600 bg-emerald-50/20">{formatKz(grandTotals.profit)}</td>
-              <td className="p-3 text-right font-mono text-slate-950">{totalMargin.toFixed(1)}%</td>
+              <td className="p-3 text-right pr-4 font-mono font-black">{new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(grandTotals.revenue)}</td>
+              <td className="p-3 text-right pr-4 font-mono font-black text-slate-500">{new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(grandTotals.cost)}</td>
+              <td className="p-3 text-right pr-4 font-mono font-black text-emerald-600 bg-emerald-50/10">{new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(grandTotals.profit)}</td>
+              <td className="p-3 text-right pr-4 font-mono font-black text-slate-950">{totalMargin.toFixed(1)}%</td>
             </tr>
           </tbody>
         </table>
@@ -950,26 +978,25 @@ function ReportVendasUsuario({ filteredInvoices, formatKz }: ReportVendasUsuario
       </div>
 
       {/* Performance list table */}
-      <div className="overflow-hidden border border-slate-100 rounded-2xl text-xs">
+      <div className="overflow-hidden border border-slate-200 rounded-lg text-xs bg-white shadow-xs">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 text-[10px] font-bold uppercase">
-              <th className="p-3">Operador / Vendedor</th>
-              <th className="p-3 text-center">N.º Doc.</th>
-              <th className="p-3 text-center">Artigos Vendidos</th>
-              <th className="p-3 text-right">Vendas Cash</th>
-              <th className="p-3 text-right">Vendas TPA</th>
-              <th className="p-3 text-right">Vendas IBAN</th>
-              <th className="p-3 text-right">Faturação Total</th>
-              <th className="p-3 text-right">Ticket Médio</th>
-              <th className="p-3 w-[120px]">Desempenho</th>
+            <tr className="bg-[#0266b3] text-white text-[10px] font-bold uppercase tracking-wider">
+              <th className="p-3 py-2.5 font-bold text-left pl-4">Operador / Vendedor</th>
+              <th className="p-3 py-2.5 font-bold text-center">N.º Doc.</th>
+              <th className="p-3 py-2.5 font-bold text-center">Artigos Vendidos</th>
+              <th className="p-3 py-2.5 font-bold text-right pr-4">Vendas Cash</th>
+              <th className="p-3 py-2.5 font-bold text-right pr-4">Vendas TPA</th>
+              <th className="p-3 py-2.5 font-bold text-right pr-4">Vendas IBAN</th>
+              <th className="p-3 py-2.5 font-bold text-right pr-4">Faturação Total</th>
+              <th className="p-3 py-2.5 font-bold text-right pr-4">Ticket Médio</th>
             </tr>
           </thead>
           <tbody>
             {operatorsArray.length > 0 ? (
               operatorsArray.map((o, idx) => (
-                <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50/30">
-                  <td className="p-3 font-bold text-slate-800 flex items-center gap-2">
+                <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50/40 text-slate-700">
+                  <td className="p-3 pl-4 font-semibold text-slate-800 flex items-center gap-2">
                     <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 text-[9px] font-extrabold flex items-center justify-center">
                       {idx + 1}
                     </span>
@@ -977,41 +1004,32 @@ function ReportVendasUsuario({ filteredInvoices, formatKz }: ReportVendasUsuario
                   </td>
                   <td className="p-3 text-center font-bold font-mono text-slate-500">{o.count}</td>
                   <td className="p-3 text-center font-mono text-slate-500">{o.qty} un</td>
-                  <td className="p-3 text-right font-mono text-slate-500">{formatKz(o.cash)}</td>
-                  <td className="p-3 text-right font-mono text-slate-500">{formatKz(o.multicaixa)}</td>
-                  <td className="p-3 text-right font-mono text-slate-500">{formatKz(o.transfer)}</td>
-                  <td className="p-3 text-right font-mono font-black text-slate-900">{formatKz(o.revenue)}</td>
-                  <td className="p-3 text-right font-mono text-slate-600">{formatKz(o.ticketAvg)}</td>
-                  <td className="p-3">
-                    <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                      <div 
-                        style={{ width: `${Math.max(0, (o.revenue / maxRevenue) * 100)}%` }}
-                        className="h-full bg-brand rounded-full"
-                      />
-                    </div>
-                  </td>
+                  <td className="p-3 text-right pr-4 font-mono">{new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(o.cash)}</td>
+                  <td className="p-3 text-right pr-4 font-mono">{new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(o.multicaixa)}</td>
+                  <td className="p-3 text-right pr-4 font-mono">{new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(o.transfer)}</td>
+                  <td className="p-3 text-right pr-4 font-mono font-bold text-slate-900">{new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(o.revenue)}</td>
+                  <td className="p-3 text-right pr-4 font-mono text-slate-600">{new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(o.ticketAvg)}</td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={9} className="p-8 text-center text-slate-400 font-medium">
+                <td colSpan={8} className="p-8 text-center text-slate-400 font-medium">
                   Nenhum operador registou vendas no período selecionado.
                 </td>
               </tr>
             )}
             {/* Grand Totals */}
-            <tr className="bg-slate-50/50 font-black text-slate-900">
-              <td className="p-3 text-xs uppercase">TOTAIS DE EQUIPA</td>
-              <td className="p-3 text-center font-mono">{grandTotals.count}</td>
-              <td className="p-3 text-center font-mono">{grandTotals.qty} un</td>
-              <td className="p-3 text-right font-mono">{formatKz(grandTotals.cash)}</td>
-              <td className="p-3 text-right font-mono">{formatKz(grandTotals.multicaixa)}</td>
-              <td className="p-3 text-right font-mono">{formatKz(grandTotals.transfer)}</td>
-              <td className="p-3 text-right font-mono bg-slate-50">{formatKz(grandTotals.revenue)}</td>
-              <td className="p-3 text-right font-mono text-slate-600">
-                {grandTotals.count > 0 ? formatKz(grandTotals.revenue / grandTotals.count) : formatKz(0)}
+            <tr className="bg-[#f0f7fc] font-black text-slate-900 border-t border-slate-300">
+              <td className="p-3 pl-4 text-xs font-black uppercase">TOTAIS DE EQUIPA</td>
+              <td className="p-3 text-center font-mono font-black">{grandTotals.count}</td>
+              <td className="p-3 text-center font-mono font-black">{grandTotals.qty} un</td>
+              <td className="p-3 text-right pr-4 font-mono font-black">{new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(grandTotals.cash)}</td>
+              <td className="p-3 text-right pr-4 font-mono font-black">{new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(grandTotals.multicaixa)}</td>
+              <td className="p-3 text-right pr-4 font-mono font-black">{new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(grandTotals.transfer)}</td>
+              <td className="p-3 text-right pr-4 font-mono font-black text-slate-950 bg-slate-50">{new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(grandTotals.revenue)}</td>
+              <td className="p-3 text-right pr-4 font-mono font-black text-slate-600">
+                {grandTotals.count > 0 ? new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(grandTotals.revenue / grandTotals.count) : '0,00'}
               </td>
-              <td className="p-3"></td>
             </tr>
           </tbody>
         </table>
@@ -1086,56 +1104,56 @@ function ReportMapaIva({ filteredInvoices, products, formatKz }: ReportMapaIvaPr
       </div>
 
       {/* Main VAT breakdown table */}
-      <div className="overflow-hidden border border-slate-100 rounded-2xl text-xs">
+      <div className="overflow-hidden border border-slate-200 rounded-lg text-xs bg-white shadow-xs">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 text-[10px] font-bold uppercase">
-              <th className="p-3">Código/Enquadramento</th>
-              <th className="p-3">Motivo de Isenção Legal</th>
-              <th className="p-3 text-right">Incidência / Base</th>
-              <th className="p-3 text-center">Taxa %</th>
-              <th className="p-3 text-right">IVA Liquidado</th>
+            <tr className="bg-[#0266b3] text-white text-[10px] font-bold uppercase tracking-wider">
+              <th className="p-3 py-2.5 font-bold text-left pl-4">Código/Enquadramento</th>
+              <th className="p-3 py-2.5 font-bold text-left">Motivo de Isenção Legal</th>
+              <th className="p-3 py-2.5 font-bold text-right pr-4">Incidência / Base</th>
+              <th className="p-3 py-2.5 font-bold text-center">Taxa %</th>
+              <th className="p-3 py-2.5 font-bold text-right pr-4">IVA Liquidado</th>
             </tr>
           </thead>
           <tbody>
             {/* Taxable line */}
-            <tr className="border-b border-slate-100 hover:bg-slate-50/30">
-              <td className="p-3 font-bold text-slate-800">Regime Geral (Normal)</td>
+            <tr className="border-b border-slate-100 hover:bg-slate-50/40 text-slate-700">
+              <td className="p-3 pl-4 font-bold text-slate-800">Regime Geral (Normal)</td>
               <td className="p-3 text-slate-500">Operações sujeitas à taxa geral de 14% de acordo com o CIVA</td>
-              <td className="p-3 text-right font-mono font-semibold text-slate-600">{formatKz(normalBase)}</td>
+              <td className="p-3 text-right pr-4 font-mono font-semibold text-slate-600">{new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(normalBase)}</td>
               <td className="p-3 text-center font-bold font-mono text-slate-700">14%</td>
-              <td className="p-3 text-right font-mono font-black text-slate-900">{formatKz(normalTax)}</td>
+              <td className="p-3 text-right pr-4 font-mono font-black text-slate-900">{new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(normalTax)}</td>
             </tr>
 
             {/* Exemption lines */}
             {exemptionsArray.length > 0 ? (
               exemptionsArray.map((ex, idx) => (
-                <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50/30 text-slate-600">
-                  <td className="p-3 font-mono font-bold text-emerald-600">{ex.code}</td>
+                <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50/40 text-slate-600">
+                  <td className="p-3 pl-4 font-mono font-bold text-emerald-600">{ex.code}</td>
                   <td className="p-3 text-slate-500 font-medium">{ex.reason}</td>
-                  <td className="p-3 text-right font-mono font-semibold text-slate-600">{formatKz(ex.base)}</td>
+                  <td className="p-3 text-right pr-4 font-mono font-semibold text-slate-600">{new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(ex.base)}</td>
                   <td className="p-3 text-center font-bold font-mono text-emerald-600">ISENTO</td>
-                  <td className="p-3 text-right font-mono text-slate-400">{formatKz(0)}</td>
+                  <td className="p-3 text-right pr-4 font-mono text-slate-400">{new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(0)}</td>
                 </tr>
               ))
             ) : (
               exemptBase > 0 && (
                 <tr className="border-b border-slate-100 text-slate-500">
-                  <td className="p-3 font-mono font-bold text-emerald-600">ISE</td>
+                  <td className="p-3 pl-4 font-mono font-bold text-emerald-600">ISE</td>
                   <td className="p-3">Isenção Geral de IVA</td>
-                  <td className="p-3 text-right font-mono">{formatKz(exemptBase)}</td>
+                  <td className="p-3 text-right pr-4 font-mono">{new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(exemptBase)}</td>
                   <td className="p-3 text-center font-bold font-mono text-emerald-600">ISENTO</td>
-                  <td className="p-3 text-right font-mono">{formatKz(0)}</td>
+                  <td className="p-3 text-right pr-4 font-mono">{new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(0)}</td>
                 </tr>
               )
             )}
 
             {/* Grand Totals */}
-            <tr className="bg-slate-50/50 font-black text-slate-900 border-t-2 border-slate-200">
-              <td colSpan={2} className="p-3 text-xs uppercase">TOTAIS DE ENQUADRAMENTO FISCAL</td>
-              <td className="p-3 text-right font-mono">{formatKz(totalBase)}</td>
-              <td className="p-3 text-center font-mono">14% / 0%</td>
-              <td className="p-3 text-right font-mono text-brand bg-brand-light/10">{formatKz(totalTax)}</td>
+            <tr className="bg-[#f0f7fc] font-black text-slate-900 border-t border-slate-300">
+              <td colSpan={2} className="p-3 pl-4 text-xs font-black uppercase">TOTAIS DE ENQUADRAMENTO FISCAL</td>
+              <td className="p-3 text-right pr-4 font-mono font-black">{new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(totalBase)}</td>
+              <td className="p-3 text-center font-mono font-black">14% / 0%</td>
+              <td className="p-3 text-right pr-4 font-mono font-black text-slate-950">{new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(totalTax)}</td>
             </tr>
           </tbody>
         </table>
@@ -1206,24 +1224,24 @@ function ReportImpostoSelo({ filteredInvoices, formatKz }: ReportImpostoSeloProp
       </div>
 
       {/* Documents breakdown table */}
-      <div className="overflow-hidden border border-slate-100 rounded-2xl text-xs">
+      <div className="overflow-hidden border border-slate-200 rounded-lg text-xs bg-white shadow-xs">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 text-[10px] font-bold uppercase">
-              <th className="p-3">Data</th>
-              <th className="p-3">N.º Documento</th>
-              <th className="p-3">Cliente</th>
-              <th className="p-3 text-center">Método Pagamento</th>
-              <th className="p-3 text-right">Total Documento</th>
-              <th className="p-3 text-right">Incidência (Selo)</th>
-              <th className="p-3 text-right">Imposto Liquidado (1%)</th>
+            <tr className="bg-[#0266b3] text-white text-[10px] font-bold uppercase tracking-wider">
+              <th className="p-3 py-2.5 font-bold text-left pl-4">Data</th>
+              <th className="p-3 py-2.5 font-bold text-left">N.º Documento</th>
+              <th className="p-3 py-2.5 font-bold text-left">Cliente</th>
+              <th className="p-3 py-2.5 font-bold text-center">Método Pagamento</th>
+              <th className="p-3 py-2.5 font-bold text-right pr-4">Total Documento</th>
+              <th className="p-3 py-2.5 font-bold text-right pr-4">Incidência (Selo)</th>
+              <th className="p-3 py-2.5 font-bold text-right pr-4">Imposto Liquidado (1%)</th>
             </tr>
           </thead>
           <tbody>
             {docsArray.length > 0 ? (
               docsArray.map((d, idx) => (
-                <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50/30 text-slate-600">
-                  <td className="p-3 font-mono">{d.date.split('-').reverse().join('/')}</td>
+                <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50/40 text-slate-700">
+                  <td className="p-3 pl-4 font-mono">{d.date.split('-').reverse().join('/')}</td>
                   <td className="p-3 font-bold text-slate-800">{d.docNo}</td>
                   <td className="p-3 font-medium text-slate-700">{d.customer}</td>
                   <td className="p-3 text-center">
@@ -1231,9 +1249,9 @@ function ReportImpostoSelo({ filteredInvoices, formatKz }: ReportImpostoSeloProp
                       {d.method}
                     </span>
                   </td>
-                  <td className="p-3 text-right font-mono text-slate-600">{formatKz(d.total)}</td>
-                  <td className="p-3 text-right font-mono text-slate-600">{formatKz(d.base)}</td>
-                  <td className="p-3 text-right font-mono font-bold text-brand">{formatKz(d.duty)}</td>
+                  <td className="p-3 text-right pr-4 font-mono">{new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(d.total)}</td>
+                  <td className="p-3 text-right pr-4 font-mono">{new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(d.base)}</td>
+                  <td className="p-3 text-right pr-4 font-mono font-bold text-brand">{new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(d.duty)}</td>
                 </tr>
               ))
             ) : (
@@ -1244,11 +1262,11 @@ function ReportImpostoSelo({ filteredInvoices, formatKz }: ReportImpostoSeloProp
               </tr>
             )}
             {/* Grand Totals */}
-            <tr className="bg-slate-50/50 font-black text-slate-900 border-t-2 border-slate-200">
-              <td colSpan={4} className="p-3 text-xs uppercase">TOTAIS DE IMPOSTO DE SELO</td>
-              <td className="p-3 text-right font-mono">{formatKz(grandTotals.total)}</td>
-              <td className="p-3 text-right font-mono">{formatKz(grandTotals.base)}</td>
-              <td className="p-3 text-right font-mono text-brand bg-brand-light/10">{formatKz(grandTotals.duty)}</td>
+            <tr className="bg-[#f0f7fc] font-black text-slate-900 border-t border-slate-300">
+              <td colSpan={4} className="p-3 pl-4 text-xs font-black uppercase">TOTAIS DE IMPOSTO DE SELO</td>
+              <td className="p-3 text-right pr-4 font-mono font-black">{new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(grandTotals.total)}</td>
+              <td className="p-3 text-right pr-4 font-mono font-black">{new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(grandTotals.base)}</td>
+              <td className="p-3 text-right pr-4 font-mono font-black text-[#0266b3] bg-brand-light/10">{new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(grandTotals.duty)}</td>
             </tr>
           </tbody>
         </table>
@@ -1385,23 +1403,23 @@ function ReportContaCorrente({
           </div>
 
           {/* Ledger Table */}
-          <div className="overflow-hidden border border-slate-100 rounded-2xl text-xs">
+          <div className="overflow-hidden border border-slate-200 rounded-lg text-xs bg-white shadow-xs">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 text-[10px] font-bold uppercase">
-                  <th className="p-3">Data</th>
-                  <th className="p-3">Documento / Código</th>
-                  <th className="p-3 text-center">Tipo</th>
-                  <th className="p-3 text-right">Débito (Faturado)</th>
-                  <th className="p-3 text-right">Crédito (Recebido)</th>
-                  <th className="p-3 text-right">Saldo Acumulado</th>
+                <tr className="bg-[#0266b3] text-white text-[10px] font-bold uppercase tracking-wider">
+                  <th className="p-3 py-2.5 font-bold text-left pl-4">Data</th>
+                  <th className="p-3 py-2.5 font-bold text-left">Documento / Código</th>
+                  <th className="p-3 py-2.5 font-bold text-center">Tipo</th>
+                  <th className="p-3 py-2.5 font-bold text-right pr-4">Débito (Faturado)</th>
+                  <th className="p-3 py-2.5 font-bold text-right pr-4">Crédito (Recebido)</th>
+                  <th className="p-3 py-2.5 font-bold text-right pr-4">Saldo Acumulado</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredLedgerEntries.length > 0 ? (
                   filteredLedgerEntries.map((e, idx) => (
-                    <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50/30 text-slate-600">
-                      <td className="p-3 font-mono">{e.date.split('-').reverse().join('/')}</td>
+                    <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50/40 text-slate-700">
+                      <td className="p-3 pl-4 font-mono">{e.date.split('-').reverse().join('/')}</td>
                       <td className="p-3 font-bold text-slate-800">{e.docNo}</td>
                       <td className="p-3 text-center">
                         <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
@@ -1412,14 +1430,14 @@ function ReportContaCorrente({
                           {e.type}
                         </span>
                       </td>
-                      <td className="p-3 text-right font-mono text-slate-600">
-                        {e.debit > 0 ? formatKz(e.debit) : '-'}
+                      <td className="p-3 text-right pr-4 font-mono">
+                        {e.debit > 0 ? new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(e.debit) : '-'}
                       </td>
-                      <td className="p-3 text-right font-mono text-slate-600">
-                        {e.credit > 0 ? formatKz(e.credit) : '-'}
+                      <td className="p-3 text-right pr-4 font-mono">
+                        {e.credit > 0 ? new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(e.credit) : '-'}
                       </td>
-                      <td className={`p-3 text-right font-mono font-bold ${e.runningBalance > 0 ? 'text-red-500' : 'text-slate-800'}`}>
-                        {formatKz(e.runningBalance)}
+                      <td className={`p-3 text-right pr-4 font-mono font-bold ${e.runningBalance > 0 ? 'text-red-500' : 'text-slate-800'}`}>
+                        {new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(e.runningBalance)}
                       </td>
                     </tr>
                   ))
@@ -1431,12 +1449,12 @@ function ReportContaCorrente({
                   </tr>
                 )}
                 {/* Grand totals */}
-                <tr className="bg-slate-50/50 font-black text-slate-900 border-t-2 border-slate-200">
-                  <td colSpan={3} className="p-3 text-xs uppercase">TOTAIS DE CONTA CORRENTE</td>
-                  <td className="p-3 text-right font-mono text-red-500">{formatKz(totalDebit)}</td>
-                  <td className="p-3 text-right font-mono text-emerald-600">{formatKz(totalCredit)}</td>
-                  <td className={`p-3 text-right font-mono bg-slate-50 ${outstandingBalance > 0 ? 'text-red-500' : 'text-emerald-600'}`}>
-                    {formatKz(outstandingBalance)}
+                <tr className="bg-[#f0f7fc] font-black text-slate-900 border-t border-slate-300">
+                  <td colSpan={3} className="p-3 pl-4 text-xs font-black uppercase">TOTAIS DE CONTA CORRENTE</td>
+                  <td className="p-3 text-right pr-4 font-mono font-black text-red-500">{new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(totalDebit)}</td>
+                  <td className="p-3 text-right pr-4 font-mono font-black text-emerald-600">{new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(totalCredit)}</td>
+                  <td className={`p-3 text-right pr-4 font-mono font-black bg-[#f0f7fc] ${outstandingBalance > 0 ? 'text-red-500' : 'text-emerald-600'}`}>
+                    {new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(outstandingBalance)}
                   </td>
                 </tr>
               </tbody>
